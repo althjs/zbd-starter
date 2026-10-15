@@ -1,0 +1,11 @@
+# 빌드 산출물·의존성·외부에서 가져온 라이브러리(그대로 둔다)
+build/
+.svelte-kit/
+node_modules/
+package-lock.json
+static/
+*.min.js
+*.min.css
+
+# 문서는 손으로 다듬은 표·줄바꿈이 많아 그대로 둔다
+*.md

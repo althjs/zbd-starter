@@ -1,0 +1,41 @@
+// Package core — 로그인·소셜 로그인·관리자 기본(메뉴·권한·회원·설정) (/login, /auth, /admin/common, /admin/member …)
+package core
+
+import "zbd.kr/be/internal/web"
+
+// Register — 이 기능의 라우트를 등록한다.
+func Register(r *web.Router) {
+	r.Handle("/health-check", web.Plain, healthCheck)
+	r.Handle("/admin/version", web.Auth, adminVersion)
+	r.Handle("/login", web.Cors, login)
+	r.Handle("/login/passkey", web.Cors, loginPasskey) // 관리자 패스키(지문·얼굴) 로그인(passkey.go)
+	r.Handle("/login/logout", web.Cors, loginLogout)
+	r.Handle("/login/session", web.Cors, loginSession)
+	r.Handle("/admin/common/meta", web.Auth, adminCommonMeta)
+	r.Handle("/admin/common/menus", web.Auth, adminCommonMenus)
+	r.Handle("/admin/menus", web.Auth, adminMenus, web.Options{Changes: true})
+	r.Handle("/admin/meta", web.Auth, adminMeta)
+	r.Handle("/admin/site-open", web.Auth, adminSiteOpen) // 사이트 공개 여부 — 즈비드 호스팅만(site_open.go)
+	r.Handle("/admin/domain", web.Auth, adminDomain)      // 도메인 관리 — 사용자·관리자 주소(domain.go)
+	registerPluginLicense(r)                              // 즈비드 플러그인 라이선스 확인 — 관리자 화면 배너(plugin_license.go)
+	r.Handle("/socket/domains", web.Plain, socketDomains) // 소켓 서버 전용(X-Socket-Secret)
+	r.Handle("/admin/my/account", web.Auth, adminMyAccount, web.Options{Changes: true})
+	r.Handle("/admin/my/verify-password", web.Auth, adminMyVerifyPassword)
+	r.Handle("/admin/my/passkey", web.Auth, adminMyPasskey)
+	r.Handle("/user/my/passkey", web.Auth, userMyPasskey) // 회원 패스키(passkey.go)
+	r.Handle("/admin/meta/[metaKey]", web.Auth, adminMetaKey)
+	r.Handle("/admin/menus/apis/[menuId]", web.Auth, adminMenuApis, web.Options{Changes: true})
+	r.Handle("/admin/menus/apis/[menuId]/[apiId]", web.Auth, adminMenuApiDelete, web.Options{Changes: true})
+	r.Handle("/admin/dashboard", web.Auth, adminDashboard)
+	r.Handle("/admin/group", web.Auth, adminGroup, web.Options{Changes: true})
+	r.Handle("/admin/group/[groupId]", web.Auth, adminGroupOne, web.Options{Changes: true})
+	r.Handle("/admin/group/auth/[groupId]", web.Auth, adminGroupAuth, web.Options{Changes: true})
+	r.Handle("/admin/member", web.Auth, adminMember, web.Options{Changes: true})
+	r.Handle("/admin/member/[adminId]", web.Auth, adminMemberOne, web.Options{Changes: true})
+	r.Handle("/admin/member/group/[groupId]", web.Auth, adminMemberByGroup)
+	r.Handle("/admin/member/login-devices", web.Auth, adminLoginDevices)
+	r.Handle("/admin/member/token", web.Auth, adminMemberToken)
+	r.Handle("/admin/user", web.Auth, adminUser)
+	r.Handle("/admin/user/[userId]", web.Auth, adminUserOne)
+	r.Handle("/admin/user/remove-user-data", web.Auth, adminRemoveUserData)
+}

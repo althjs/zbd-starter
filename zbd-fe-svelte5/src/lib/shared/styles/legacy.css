@@ -1,0 +1,297 @@
+/**
+ * React 판(fe-service) 의 전역 CSS 를 그대로 옮긴 것 — index.css + App.css (운영 빌드 index-*.css 에서 아이콘 글꼴을 뺀 나머지).
+ *
+ * 왜 그대로인가: 운영자가 관리 화면에서 쓴 HTML·CSS(디자인 위젯·GNB·전역 CSS) 는 이 바탕 위에서 모양이 정해졌다.
+ * 하나라도 다르면 그 HTML 들이 조금씩 달라 보인다(예: a 굵기 500, h1 3.2em, button 회색 바탕).
+ * 고치지 말 것 — 바꿀 것이 있으면 tokens.css 나 부품 쪽에서.
+ */
+body {
+	-webkit-overflow-scrolling: touch;
+	-webkit-tap-highlight-color: transparent;
+}
+a,
+button,
+[role='button'] {
+	-webkit-tap-highlight-color: transparent;
+}
+img[loading='lazy'] {
+	content-visibility: auto;
+}
+body {
+	color: #000;
+	background-color: #fff;
+	font-family: 'Pretendard Variable', 'Noto Color Emoji', sans-serif;
+}
+.MuiStack-root:focus-visible,
+.MuiBox-root:focus-visible {
+	outline: none !important;
+}
+.max {
+	width: -moz-available !important;
+	width: -webkit-fill-available !important;
+}
+.swiper-button-next:after,
+.swiper-button-prev:after {
+	content: '';
+	opacity: 0.3;
+	background: #000 url(https://octopus.gcdn.ntruss.com/OCTOPUS/public/images/button_slide_left.png) 50%/48px no-repeat;
+	width: 48px;
+	height: 48px;
+}
+.swiper-button-next:after {
+	background-image: url(https://octopus.gcdn.ntruss.com/OCTOPUS/public/images/button_slide_right.png);
+}
+.m .swiper-button-next:after,
+.m .swiper-button-prev:after {
+	background-size: 32px;
+	width: 32px;
+	height: 32px;
+}
+.swiper-button-prev {
+	width: 48px;
+	margin-left: -10px;
+}
+.m .swiper-button-prev {
+	width: 32px;
+	height: 32px;
+	margin-top: 0;
+}
+.swiper-button-next {
+	width: 48px;
+	margin-right: -10px;
+}
+.m .swiper-button-next {
+	width: 32px;
+	height: 32px;
+	margin-top: 0;
+	margin-left: -18px;
+}
+.swiper-button-next.swiper-button-disabled,
+.swiper-button-prev.swiper-button-disabled {
+	pointer-events: all !important;
+}
+.swiper-button-next svg,
+.swiper-button-prev svg {
+	display: none;
+}
+.TitleAnimator {
+	text-shadow: 1px 1px 12px #000000ab;
+}
+.banselect {
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	user-select: none;
+}
+.MuiContainer-root.no-px {
+	padding-left: 0;
+	padding-right: 0;
+}
+:root {
+	--gray100: #fafafa;
+	--gray150: #f6f6f6;
+	--gray200: #f2f2f2;
+	--gray300: #ebebeb;
+	--gray400: #e1e1e1;
+	--gray500: #cfcfcf;
+	--gray600: #bdbdbd;
+	--gray700: #909090;
+	--grayd700: #7e7e7e;
+	--grayd600: #606060;
+	--grayd500: #575757;
+	--grayd400: #494949;
+	--grayd300: #404040;
+	--grayd200: #2d2d2d;
+	--grayd100: #1b1b1b;
+}
+@keyframes slideInLeft {
+	0% {
+		transform: translate(-60%);
+	}
+	to {
+		transform: translate(0, 0);
+	}
+}
+@keyframes slideOutLeft {
+	0% {
+		transform: translate(0, 0);
+	}
+	to {
+		transform: translate(-60%);
+	}
+}
+@keyframes slideInRight {
+	0% {
+		transform: translate(60%);
+	}
+	to {
+		transform: translate(0, 0);
+	}
+}
+@keyframes slideOutRight {
+	0% {
+		transform: translate(0, 0);
+	}
+	to {
+		transform: translate(60%);
+	}
+}
+@keyframes slideInTop {
+	0% {
+		transform: translateY(-60%);
+	}
+	to {
+		transform: translate(0, 0);
+	}
+}
+@keyframes slideOutTop {
+	0% {
+		transform: translate(0, 0);
+	}
+	to {
+		transform: translateY(-60%);
+	}
+}
+@keyframes slideInBottom {
+	0% {
+		transform: translateY(60%);
+	}
+	to {
+		transform: translate(0, 0);
+	}
+}
+@keyframes slideOutBottom {
+	0% {
+		transform: translate(0, 0);
+	}
+	to {
+		transform: translateY(60%);
+	}
+}
+@keyframes fadeIn {
+	0% {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+@keyframes fadeOut {
+	0% {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
+@keyframes zoomIn {
+	0% {
+		transform: scale(0.5);
+	}
+	to {
+		transform: scale(1);
+	}
+}
+@keyframes zoomOut {
+	0% {
+		transform: scale(1);
+	}
+	to {
+		transform: scale(0.5);
+	}
+}
+.tox-statusbar__branding,
+.tox .tox-promotion {
+	display: none;
+}
+:root {
+	color-scheme: light;
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+	font-weight: 400;
+	line-height: 1.5;
+}
+a {
+	color: inherit;
+	text-decoration: inherit;
+	font-weight: 500;
+}
+a:hover {
+	color: var(--theme-color-darkest, #747bff);
+}
+* {
+	box-sizing: border-box;
+}
+body {
+	min-width: 280px;
+	min-height: 100vh;
+	margin: 0;
+	display: flex;
+}
+h1 {
+	font-size: 3.2em;
+	line-height: 1.1;
+}
+button {
+	cursor: pointer;
+	background-color: #f9f9f9;
+	border: 1px solid #0000;
+	border-radius: 8px;
+	padding: 0.6em 1.2em;
+	font-family: inherit;
+	font-size: 1em;
+	font-weight: 500;
+	transition: border-color 0.25s;
+}
+.simplebar-content-wrapper:focus-visible {
+	outline: none;
+}
+
+/**
+ * 터치 화면(휴대폰·즈비드 앱) 의 Scrollbar(simplebar) — 안드로이드 기본 스크롤바처럼 얇고 각지게.
+ * 기본값은 폭 7px·둥근 막대라 앱 안에서 웹 티가 났다(2026-09-24 대표 요청).
+ * PC 는 마우스로 잡아 끌어야 하니 그대로 둔다.
+ */
+/* ⚠ 선택자 앞 [data-simplebar] 는 빼지 말 것 — simplebar CSS 가 운영 빌드에서 이 파일보다 **나중에** 읽혀
+ *	 같은 구체성이면 기본값(칸 11px) 이 이긴다. 그러면 여백만 바뀌어 막대가 9px 로 오히려 두꺼워졌다(실측). */
+@media (pointer: coarse) {
+	/* 막대 4px(안드로이드 기본 4dp) + 가장자리 여백 1px */
+	[data-simplebar] .simplebar-track.simplebar-vertical {
+		width: 6px;
+	}
+	[data-simplebar] .simplebar-track.simplebar-horizontal {
+		height: 6px;
+	}
+	[data-simplebar] .simplebar-track .simplebar-scrollbar:before {
+		border-radius: 0;
+		background: #000;
+		top: 1px;
+		bottom: 1px;
+		left: 1px;
+		right: 1px;
+	}
+	[data-simplebar] .simplebar-scrollbar.simplebar-visible:before {
+		opacity: 0.35;
+	}
+}
+
+/* PC 에서도 같은 얇은 막대를 쓰고 싶은 스크롤 영역 — <Scrollbar className="thin-scrollbar"> (미니홈피 관리 등) */
+[data-simplebar].thin-scrollbar > .simplebar-track.simplebar-vertical {
+	width: 6px;
+}
+[data-simplebar].thin-scrollbar > .simplebar-track.simplebar-horizontal {
+	height: 6px;
+}
+[data-simplebar].thin-scrollbar > .simplebar-track .simplebar-scrollbar:before {
+	border-radius: 0;
+	background: #000;
+	top: 1px;
+	bottom: 1px;
+	left: 1px;
+	right: 1px;
+}
+[data-simplebar].thin-scrollbar > .simplebar-track .simplebar-scrollbar.simplebar-visible:before {
+	opacity: 0.35;
+}

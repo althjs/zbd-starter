@@ -1,0 +1,424 @@
+/* 묶음 「settings」 공용 모양 — 구체성은 :where 로 낮춘다(화면 sx 가 이기게). 부품이 import 한다. */
+
+/* 날짜 칸(MUI X DatePicker 작은 outlined, 높이 32) — ui/DatePickerField */
+:where(html.zbd-admin) .adm-dp {
+	display: inline-flex;
+	flex-direction: column;
+	position: relative;
+	min-width: 0;
+	vertical-align: top;
+}
+:where(html.zbd-admin) .adm-dp-root {
+	display: flex;
+	align-items: center;
+	position: relative;
+	box-sizing: border-box;
+	padding: 0 14px;
+	height: 32px;
+	border-radius: 8px;
+	cursor: text;
+	font-family: var(--mui-font);
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 24px;
+	letter-spacing: 0.13132px;
+	color: var(--adm-text);
+}
+:where(html.zbd-admin) .adm-dp-sections {
+	display: flex;
+	flex: 1 1 auto;
+	overflow: hidden;
+	line-height: 20.125px;
+	white-space: nowrap;
+	outline: none;
+}
+:where(html.zbd-admin) .adm-dp-sections > span {
+	white-space: pre;
+}
+:where(html.zbd-admin) .adm-dp-adorn {
+	display: flex;
+	align-items: center;
+	height: 28px;
+	margin-left: 8px;
+	white-space: nowrap;
+	color: var(--adm-action);
+}
+:where(html.zbd-admin) .adm-dp-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	padding: 8px;
+	margin: 0 -12px 0 0;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
+	flex: 0 0 auto;
+	font-size: 24px;
+}
+:where(html.zbd-admin) .adm-dp-btn:hover {
+	background-color: var(--adm-hover);
+}
+:where(html.zbd-admin) .adm-dp-btn svg {
+	width: 18px;
+	height: 18px;
+	fill: currentColor;
+}
+:where(html.zbd-admin) .adm-dp fieldset {
+	position: absolute;
+	inset: -5px 0 0 0;
+	margin: 0;
+	padding: 0 8px;
+	pointer-events: none;
+	border: 1px solid var(--adm-n200);
+	border-radius: 8px;
+	overflow: hidden;
+	min-width: 0;
+	text-align: left;
+}
+:where(html.zbd-admin) .adm-dp fieldset legend {
+	float: unset;
+	width: auto;
+	overflow: hidden;
+	padding: 0;
+	line-height: 11px;
+	font-size: 0.75em;
+	visibility: hidden;
+	max-width: 0.01px;
+}
+:where(html.zbd-admin) .adm-dp.focused fieldset {
+	border-color: var(--theme-color-main);
+	border-width: 2px;
+}
+:where(html.zbd-admin) .adm-dp-native {
+	position: absolute;
+	left: 14px;
+	bottom: 0;
+	width: 1px;
+	height: 1px;
+	opacity: 0;
+	border: 0;
+	padding: 0;
+	pointer-events: none;
+}
+
+/* 표 본문 칸 줄 높이 — React 는 theme body2(14px · 1.5 = 21px). 바탕 admin.css 는 1.43 이라 줄이 1px 씩 낮다(바탕 요청에 적음) */
+:where(html.zbd-admin) .MuiTableCell-root.MuiTableCell-body {
+	line-height: 1.5;
+}
+/* 휴대폰 표 본문 칸 — React 는 theme 「MuiTable-root td { padding: 4px 16px }」 가 index.css 의 좁은 여백(8px)을 이겨 16 그대로다.
+   바탕 admin.css 는 본문 칸까지 8 로 줄여 휴대폰 표가 달라 보인다(바탕 요청에 적음).
+   표에 sx 로 td 여백을 준 화면은 --adm-td-px 도 같이 준다(React 에선 sx 가 이겼다) */
+@media (max-width: 599.95px) {
+	html.zbd-admin main .MuiTable-root td.MuiTableCell-root {
+		padding-left: var(--adm-td-px, 16px);
+		padding-right: var(--adm-td-px, 16px);
+	}
+}
+
+/* 알림 상자(MUI Alert standard·outlined) — 색 = palette.light 를 MUI 처럼 밝게(배경 90%)·어둡게(글자 60%) */
+:where(html.zbd-admin) .adm-alert {
+	--al: var(--adm-info-light);
+	--am: var(--adm-info-main);
+	background-color: color-mix(in srgb, var(--al) 10%, white);
+	color: color-mix(in srgb, var(--al) 40%, black);
+}
+:where(html.zbd-admin) .adm-alert.outlined {
+	background-color: transparent;
+	border: 1px solid var(--al);
+}
+:where(html.zbd-admin) .adm-alert .MuiAlert-icon {
+	color: var(--am);
+}
+:where(html.zbd-admin) .adm-alert.success {
+	--al: var(--adm-success-light);
+	--am: var(--adm-success-main);
+}
+:where(html.zbd-admin) .adm-alert.warning {
+	--al: var(--adm-warning-light);
+	--am: var(--adm-warning-main);
+}
+:where(html.zbd-admin) .adm-alert.error {
+	--al: var(--adm-error-light);
+	--am: var(--adm-error-main);
+}
+:where(html.zbd-admin[data-mode='dark']) .adm-alert {
+	background-color: color-mix(in srgb, var(--al) 10%, black);
+	color: color-mix(in srgb, var(--al) 40%, white);
+}
+
+/* outlined 칸의 라벨 홈(테두리에 라벨 자리를 비운다) — ui/OutlinedField */
+:where(html.zbd-admin) .MuiOutlinedInput-notchedOutline legend.adm-of-notch {
+	font-size: 0.75em;
+	max-width: 100%;
+	visibility: hidden;
+	height: 11px;
+}
+:where(html.zbd-admin) .MuiOutlinedInput-notchedOutline legend.adm-of-notch > span {
+	padding: 0 5px;
+	display: inline-block;
+	opacity: 0;
+}
+
+/* 선택 상자 안 작은 라벨(React 회원 검색 Select 의 sx 꾸밈) — ui/OutlinedSelect label */
+:where(html.zbd-admin) .adm-sel-labeled .MuiSelect-outlined {
+	margin-top: 8px;
+	padding-top: 16px;
+	padding-bottom: 4px;
+}
+:where(html.zbd-admin) .adm-sel-labeled fieldset {
+	overflow: visible;
+	position: absolute;
+}
+/* 이름표는 legend 안에 있다 — 그냥 두면 브라우저가 legend 를 **테두리 선 위에** 걸쳐 그려 글자가 선에 걸린다(2026-10-05 대표 「Select 가 매번 저러네」).
+   테두리 안에 두는 모양(search·common)은 legend 를 띄워(absolute) 선을 이어지게, area 는 아래 MUI 처럼 선을 끊고 그 자리에 둔다 */
+:where(html.zbd-admin) .adm-sel-labeled:not(.adm-sel-lab3) legend {
+	position: absolute;
+	left: 8px;
+	max-width: calc(100% - 40px);
+}
+:where(html.zbd-admin) .adm-sel-labeled legend {
+	z-index: 1;
+	top: 0;
+	width: 0;
+	background: transparent;
+	visibility: visible;
+	overflow: visible;
+	font-size: 12px;
+	white-space: nowrap;
+}
+:where(html.zbd-admin) .adm-sel-labeled legend > span {
+	display: inline-block;
+	color: #6c737f;
+	margin-top: 9.6px;
+	padding: 0 5px;
+	font-size: 12px;
+	opacity: 1;
+	line-height: 23px;
+}
+:where(html.zbd-admin) .adm-sel-ph {
+	color: var(--gt-700, #909090);
+}
+/* 밑줄 선택 상자(variant=standard) */
+:where(html.zbd-admin) .adm-sel-std {
+	position: relative;
+}
+:where(html.zbd-admin) .adm-sel-std::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.42);
+	pointer-events: none;
+}
+:where(html.zbd-admin) .adm-sel-std .MuiSelect-standard {
+	padding: 4px 24px 5px 0;
+	cursor: pointer;
+	min-width: 16px;
+	font-size: 14px;
+}
+:where(html.zbd-admin) .adm-sel-std .MuiSelect-icon {
+	position: absolute;
+	right: 0;
+	top: calc(50% - 0.5em);
+	pointer-events: none;
+	color: var(--adm-action);
+}
+
+/* 밑줄 입력칸(MUI TextField variant=standard) — ui/TagField */
+:where(html.zbd-admin) .adm-std-input {
+	position: relative;
+}
+:where(html.zbd-admin) .adm-std-input::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.42);
+	pointer-events: none;
+}
+:where(html.zbd-admin) .adm-std-input:hover:not(.Mui-disabled)::before {
+	border-bottom: 2px solid var(--adm-text);
+}
+:where(html.zbd-admin) .adm-std-input::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	border-bottom: 2px solid var(--theme-color-main);
+	transform: scaleX(0);
+	transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+	pointer-events: none;
+}
+:where(html.zbd-admin) .adm-std-input:focus-within::after {
+	transform: scaleX(1);
+}
+:where(html.zbd-admin) .adm-std-input.Mui-disabled::before {
+	border-bottom-style: dotted;
+}
+:where(html.zbd-admin) .adm-std-input .MuiInput-input {
+	padding: 4px 0 5px;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 24px;
+	height: 1.4375em;
+	box-sizing: content-box;
+}
+:where(html.zbd-admin[data-mode='dark']) .adm-std-input::before {
+	border-bottom-color: rgba(255, 255, 255, 0.42);
+}
+:where(html.zbd-admin) .adm-chip-del {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	margin: 0 4px 0 -4px;
+	cursor: pointer;
+	fill: currentColor;
+	color: rgba(0, 0, 0, 0.26);
+}
+
+/* 라디오 — ui/RadioGroup (MUI Radio: 겉 원 + 안 점, 고르면 점이 커진다) */
+:where(html.zbd-admin) .adm-radio-icon {
+	position: relative;
+	display: flex;
+	width: 1em;
+	height: 1em;
+	font-size: 24px;
+}
+:where(html.zbd-admin) .adm-radio-sm .adm-radio-icon {
+	font-size: 20px;
+}
+:where(html.zbd-admin) .adm-radio-icon svg {
+	width: 1em;
+	height: 1em;
+	fill: currentColor;
+	flex-shrink: 0;
+}
+:where(html.zbd-admin) .adm-radio-icon .adm-radio-dot {
+	position: absolute;
+	left: 0;
+	transform: scale(0);
+	transition: transform 150ms cubic-bezier(0.4, 0, 1, 1);
+}
+:where(html.zbd-admin) .adm-radio-icon .adm-radio-dot.on {
+	transform: scale(1);
+	transition: transform 150ms cubic-bezier(0, 0, 0.2, 1);
+}
+:where(html.zbd-admin) .MuiRadio-root.Mui-disabled {
+	color: var(--adm-text-disabled);
+}
+:where(html.zbd-admin) .MuiFormControlLabel-label.Mui-disabled {
+	color: var(--adm-text-disabled);
+}
+:where(html.zbd-admin) .adm-std-multi {
+	padding: 4px 0 5px;
+	align-items: flex-start;
+}
+:where(html.zbd-admin) .adm-std-multi .MuiInput-input {
+	padding: 0;
+	resize: none;
+	height: auto;
+	overflow: hidden;
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 23px;
+	border: 0;
+	outline: 0;
+	background: none;
+	color: inherit;
+	width: 100%;
+}
+:where(html.zbd-admin) .adm-sf-labeled {
+	position: relative;
+}
+:where(html.zbd-admin) .adm-sf-labeled .adm-std-input {
+	margin-top: 16px;
+}
+:where(html.zbd-admin) .adm-sf-label {
+	position: absolute;
+	left: 0;
+	top: 0;
+	transform: translate(0, -1.5px) scale(0.75);
+	transform-origin: top left;
+	white-space: nowrap;
+	color: var(--adm-text2);
+	font-size: 16px;
+	line-height: 1.4375em;
+}
+/* React components/common/Select isLabeled */
+:where(html.zbd-admin) .adm-sel-lab2.adm-sel-labeled {
+	height: 46.73px;
+}
+:where(html.zbd-admin) .adm-sel-lab2.adm-sel-labeled .MuiSelect-outlined {
+	margin-top: 0;
+	padding-top: 17px;
+	padding-bottom: 2px;
+	font-size: 14px;
+	line-height: 24px;
+	min-height: unset;
+}
+:where(html.zbd-admin) .adm-sel-lab2.adm-sel-labeled legend > span {
+	margin-top: 10px;
+	line-height: inherit;
+	transition: color 0.2s;
+}
+:where(html.zbd-admin) .adm-sel-lab2.adm-sel-labeled.Mui-focused legend > span {
+	color: var(--theme-color-main);
+}
+:where(html.zbd-admin) .adm-sel-lab2.adm-sel-labeled.Mui-focused .MuiOutlinedInput-notchedOutline {
+	border-width: 1px;
+}
+
+/* outlined 칸 앞 아이콘(InputAdornment start) — ui/OutlinedField start */
+:where(html.zbd-admin) .MuiOutlinedInput-root.MuiInputBase-adornedStart {
+	padding-left: 14px;
+}
+:where(html.zbd-admin) .MuiOutlinedInput-root.MuiInputBase-adornedStart .MuiOutlinedInput-input {
+	padding-left: 0;
+}
+:where(html.zbd-admin) .adm-of-start {
+	display: flex;
+	align-items: center;
+	height: 0.01em;
+	max-height: 2em;
+	margin-right: 8px;
+	white-space: nowrap;
+	color: var(--adm-action);
+}
+:where(html.zbd-admin) .adm-std-input.MuiInputBase-sizeSmall .MuiInput-input {
+	padding-top: 1px;
+}
+:where(html.zbd-admin) .adm-std-multi.MuiInputBase-sizeSmall {
+	padding-top: 1px;
+}
+
+/* 입력 오류 문구(MUI Typography color="error") */
+:where(html.zbd-admin) .adm-err {
+	color: var(--adm-error-main);
+}
+
+/* labelStyle="area" — 테두리를 끊고 이름표(아래) */
+:where(html.zbd-admin) .adm-sel-lab3.adm-sel-labeled .MuiSelect-outlined {
+	margin-top: 0;
+	padding-top: 8.5px;
+	padding-bottom: 8.5px;
+}
+/* area — MUI 기본 outlined 처럼 테두리를 끊고 그 자리에 이름표 */
+:where(html.zbd-admin) .adm-sel-lab3.adm-sel-labeled legend {
+	width: auto;
+	height: 11px;
+	max-width: 100%;
+	padding: 0;
+}
+:where(html.zbd-admin) .adm-sel-lab3.adm-sel-labeled legend > span {
+	margin-top: 0;
+	padding: 0 4px;
+	line-height: 11px;
+	vertical-align: top;
+}

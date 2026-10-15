@@ -1,0 +1,84 @@
+/**
+ * 전역 바탕 — 읽는 순서가 곧 우선순위다.
+ *   1. legacy.css   React 판 전역 CSS 그대로(운영자 HTML·CSS 가 이 위에서 만들어졌다)
+ *   2. tokens.css   디자인 토큰
+ *   3. mui.css      MUI 호환 이름표(.MuiStack-root 등) 의 모양 — 운영 CSS 가 그 이름을 겨냥한다
+ *   4. 아래         Svelte 부품용 기본값 + 운영자 HTML 영역(.html-view) 되돌리기
+ */
+@import 'material-icons/iconfont/filled.css'; /* 쓰는 것은 기본(filled) 아이콘뿐 */
+@import './lib/shared/styles/legacy.css';
+@import './lib/shared/styles/tokens.css';
+@import './lib/shared/styles/mui.css';
+
+html {
+	-webkit-text-size-adjust: 100%;
+}
+
+/* 부품 안의 글자 요소는 예전 MUI Typography 처럼 바깥 여백 없음 · p 만 본문 글자 간격 */
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	margin: 0;
+}
+p {
+	letter-spacing: var(--zbd-ls-body);
+}
+/* 부품 사진은 블록·폭 100% — MUI 이름표가 붙은 사진(CardMedia) 은 제외(React 판엔 이 규칙이 없었다) · 구체성 0 */
+:where(img:not([class*='Mui'])) {
+	display: block;
+	max-width: 100%;
+}
+
+/* Svelte 부품의 <button> 은 MUI ButtonBase 처럼 초기화 — legacy.css 의 button(회색 바탕·여백) 은 운영자 HTML 용 */
+button[class*='svelte-'] {
+	background-color: transparent;
+	border: 0;
+	border-radius: 0;
+	padding: 0;
+	margin: 0;
+	font-size: inherit;
+	font-weight: inherit;
+	color: inherit;
+}
+
+/*
+ * 운영자·회원이 쓴 HTML = `.html-view`(디자인 HTML 위젯·GNB·푸터) · `.zbd-raw`(게시글 본문 등) 영역.
+ * 위의 부품 기본값(p·h 여백 0, p 글자 간격) 을 브라우저 기본으로 되돌린다 — :where() 라 구체성이 낮아
+ * 운영자 CSS 의 클래스 규칙이 늘 이긴다(React 판과 같은 조건).
+ */
+:where(.html-view, .zbd-raw) :is(p, h1, h2, h3, h4, h5, h6) {
+	margin: revert;
+	letter-spacing: normal;
+}
+/* React 판 HtmlView 의 sx 그대로(.css-xxx img 와 같은 구체성 0,1,1) */
+.html-view {
+	width: 100%;
+}
+.html-view img {
+	display: block;
+	max-width: 100%;
+}
+.html-view p[style*='text-align: center'] img,
+.html-view p[style*='text-align:center'] img {
+	margin-left: auto;
+	margin-right: auto;
+}
+.html-view p[style*='text-align: right'] img,
+.html-view p[style*='text-align:right'] img {
+	margin-left: auto;
+	margin-right: 0;
+}
+
+/* 머티리얼 아이콘 — <Icon> 과 같은 모양 */
+.material-icons {
+	user-select: none;
+	flex-shrink: 0;
+	overflow: hidden;
+	width: 1em;
+	height: 1em;
+	display: inline-block;
+}

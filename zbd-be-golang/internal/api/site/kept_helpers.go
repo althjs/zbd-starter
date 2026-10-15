@@ -1,0 +1,7 @@
+package site
+
+import "regexp"
+
+// 지운 기능 파일에 있던 공용 도우미 — 남은 코드가 쓴다(스타터 정리 2026-10-04)
+
+var reTags = regexp.MustCompile(`<[^>]+>`)

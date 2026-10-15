@@ -1,0 +1,40 @@
+<script lang="ts">
+	/** MUI Menu(Popover) 호환 — anchor 요소 아래에 목록을 띄운다(body 에 그린다) */
+	import type { Snippet } from 'svelte';
+	import { tick } from 'svelte';
+	import { portal } from '../ui/portal';
+	import { cx, sx as toClass, type Sx } from './sx';
+
+	let { anchor, open, onclose, paperSx = null, children }: { anchor: HTMLElement | null; open: boolean; onclose: () => void; paperSx?: Sx | null; children: Snippet } = $props();
+	let paper = $state<HTMLElement>();
+	let pos = $state({ top: 0, left: 0 });
+
+	$effect(() => {
+		if (!open || !anchor) return;
+		tick().then(() => {
+			const r = anchor!.getBoundingClientRect();
+			const h = paper?.offsetHeight || 0;
+			const w = paper?.offsetWidth || 0;
+			pos = {
+				top: Math.max(16, Math.min(r.bottom, window.innerHeight - h - 16)),
+				left: Math.max(16, Math.min(r.left, window.innerWidth - w - 16))
+			};
+		});
+	});
+</script>
+
+{#if open}
+	<div use:portal role="presentation" class="MuiPopover-root MuiMenu-root MuiModal-root">
+		<div class="MuiBackdrop-root MuiBackdrop-invisible MuiModal-backdrop" aria-hidden="true" onclick={onclose}></div>
+		<div
+			bind:this={paper}
+			class={cx('MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation8 MuiPopover-paper MuiMenu-paper', toClass(paperSx))}
+			style="top:{pos.top}px;left:{pos.left}px"
+		>
+			<ul class="MuiList-root MuiList-padding MuiMenu-list" role="menu">
+				{@render children()}
+			</ul>
+		</div>
+	</div>
+{/if}
+<svelte:window onkeydown={(e) => open && e.key == 'Escape' && onclose()} />

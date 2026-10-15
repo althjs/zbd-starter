@@ -1,0 +1,1254 @@
+/**
+ * MUI 호환 이름표 — `lib/shared/mui/*` 부품이 붙이는 클래스(.MuiStack-root 등) 의 모양.
+ *
+ * 왜 MUI 이름을 그대로 쓰나: 운영자 CSS(전역·GNB·디자인 위젯, 관리 화면에서 쓴 것) 가
+ * `.MuiStack-root`·`.MuiContainer-root`·`.MuiDrawer-paper`… 를 겨냥해 모양을 잡아 두었다(2026-10-03 기준 50여 곳).
+ * 이름이 다르면 그 CSS 가 전부 빗나간다. 값은 MUI 9 기본 + fe-service 테마(theme/*.ts) 를 재서 옮겼다.
+ *
+ * 색은 사이트 테마 변수(--theme-color-*) — 레이아웃이 siteMeta.design.theme 으로 채운다(theme.ts).
+ * 이 파일의 규칙은 MUI 처럼 **클래스 하나짜리** 구체성으로 둔다 — 운영자 CSS 가 덮어쓸 수 있어야 한다.
+ */
+:root {
+	--mui-font: 'Pretendard Variable', 'Inter', -apple-system, Noto Color Emoji, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+	--mui-text-primary: #111927;
+	--mui-text-secondary: #2f3746;
+	--mui-action-active: #6c737f;
+	--mui-action-hover: rgba(17, 25, 39, 0.04);
+	--mui-divider: #ddd;
+}
+
+.MuiStack-root {
+	display: flex;
+	flex-direction: column;
+}
+
+/* Container(maxWidth lg) — 좌우 16 / 600 이상 24, 1280 넘으면 1280 */
+.MuiContainer-root {
+	width: 100%;
+	margin-left: auto;
+	box-sizing: border-box;
+	margin-right: auto;
+	display: block;
+	padding-left: 16px;
+	padding-right: 16px;
+}
+@media (min-width: 600px) {
+	.MuiContainer-root {
+		padding-left: 24px;
+		padding-right: 24px;
+	}
+}
+@media (min-width: 600px) {
+	.MuiContainer-maxWidthSm {
+		max-width: 600px;
+	}
+}
+@media (min-width: 900px) {
+	.MuiContainer-maxWidthMd {
+		max-width: 900px;
+	}
+}
+@media (min-width: 1280px) {
+	.MuiContainer-maxWidthLg {
+		max-width: 1280px;
+	}
+}
+
+/* 글자 — fe-service theme/create-typography.ts. 테마가 정한 글자 모양은 글자 간격을 정하지 않는다 = 부모 것을 물려받는다(운영 실측: 표 머리 안 h6 = 0.5px) */
+.MuiTypography-root {
+	margin: 0;
+}
+.MuiTypography-inherit {
+	font: inherit;
+	letter-spacing: inherit;
+}
+.MuiTypography-body1 {
+	font-family: var(--mui-font);
+	font-weight: 400;
+	font-size: 16px;
+	line-height: 1.5;
+	letter-spacing: inherit;
+}
+.MuiTypography-noWrap {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.MuiTypography-body2 {
+	font-family: var(--mui-font);
+	font-weight: 400;
+	font-size: 14px;
+	line-height: 1.5;
+	letter-spacing: inherit;
+}
+.MuiTypography-subtitle1 {
+	font-family: var(--mui-font);
+	font-weight: 500;
+	font-size: 16px;
+	line-height: 1.5;
+	letter-spacing: inherit;
+}
+.MuiTypography-subtitle2 {
+	font-family: var(--mui-font);
+	font-weight: 500;
+	font-size: 14px;
+	line-height: 1.5;
+	letter-spacing: inherit;
+}
+.MuiTypography-caption {
+	font-family: var(--mui-font);
+	font-weight: 500;
+	font-size: 12px;
+	line-height: 1.5;
+	letter-spacing: inherit;
+}
+.MuiTypography-overline {
+	font-family: var(--mui-font);
+	font-weight: 600;
+	font-size: 0.75rem;
+	line-height: 2.5;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+}
+.MuiTypography-h1 {
+	font-family: var(--mui-font);
+	font-weight: 700;
+	font-size: 32px;
+	line-height: 1.5;
+	letter-spacing: inherit;
+}
+.MuiTypography-h2 {
+	font-family: var(--mui-font);
+	font-weight: 700;
+	font-size: 28px;
+	line-height: 1.5;
+	letter-spacing: inherit;
+}
+.MuiTypography-h3 {
+	font-family: var(--mui-font);
+	font-weight: 700;
+	font-size: 24px;
+	line-height: 1.5;
+	letter-spacing: inherit;
+}
+.MuiTypography-h4 {
+	font-family: var(--mui-font);
+	font-weight: 700;
+	font-size: 20px;
+	line-height: 1.5;
+	letter-spacing: inherit;
+}
+.MuiTypography-h5 {
+	font-family: var(--mui-font);
+	font-weight: 700;
+	font-size: 18px;
+	line-height: 1.5;
+	letter-spacing: inherit;
+}
+.MuiTypography-h6 {
+	font-family: var(--mui-font);
+	font-weight: 700;
+	font-size: 16px;
+	line-height: 1.5;
+	letter-spacing: inherit;
+}
+.MuiTypography-gutterBottom {
+	margin-bottom: 0.35em;
+}
+
+/* 링크 — theme MuiLink(굵기 600, 색 물려받기, 올리면 진한 대표색) */
+.MuiLink-root {
+	font-size: inherit;
+	font-weight: 600;
+	cursor: pointer;
+	color: inherit;
+}
+.MuiLink-root:hover {
+	color: var(--theme-color-dark);
+}
+.MuiLink-underlineNone {
+	text-decoration: none;
+}
+.MuiLink-underlineAlways {
+	text-decoration: underline;
+	text-decoration-color: var(--theme-color-alpha50, rgba(49, 114, 108, 0.4));
+}
+.MuiLink-underlineHover {
+	text-decoration: none;
+}
+.MuiLink-underlineHover:hover {
+	text-decoration: underline;
+	text-decoration-color: var(--theme-color-alpha50, rgba(49, 114, 108, 0.4));
+}
+
+/* 아이콘 */
+.MuiIcon-root {
+	user-select: none;
+	width: 1em;
+	height: 1em;
+	overflow: hidden;
+	display: inline-block;
+	text-align: center;
+	flex-shrink: 0;
+	font-size: 1.5rem;
+}
+.MuiIcon-fontSizeSmall {
+	font-size: 1.25rem;
+}
+.MuiIcon-fontSizeLarge {
+	font-size: 2.1875rem;
+}
+.MuiIcon-fontSizeInherit {
+	font-size: inherit;
+}
+
+/* 버튼 바탕(ButtonBase) */
+.MuiButtonBase-root {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+	box-sizing: border-box;
+	-webkit-tap-highlight-color: transparent;
+	background-color: transparent;
+	outline: 0;
+	border: 0;
+	margin: 0;
+	border-radius: 0;
+	padding: 0;
+	cursor: pointer;
+	user-select: none;
+	vertical-align: middle;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	text-decoration: none;
+	color: inherit;
+}
+.MuiIconButton-root {
+	text-align: center;
+	flex: 0 0 auto;
+	font-size: 1.5rem;
+	padding: 8px;
+	border-radius: 50%;
+	color: var(--mui-action-active);
+	transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+.MuiIconButton-root:hover {
+	background-color: var(--mui-action-hover);
+}
+@media (hover: none) {
+	.MuiIconButton-root:hover {
+		background-color: transparent;
+	}
+}
+.MuiIconButton-sizeSmall {
+	padding: 5px;
+	font-size: 1.125rem;
+}
+
+/* 구분선 */
+.MuiDivider-root {
+	margin: 0;
+	flex-shrink: 0;
+	border-width: 0;
+	border-style: solid;
+	border-color: var(--mui-divider);
+	border-bottom-width: thin;
+}
+.MuiDivider-vertical {
+	height: 100%;
+	border-bottom-width: 0;
+	border-right-width: thin;
+}
+.MuiDivider-flexItem {
+	align-self: stretch;
+	height: auto;
+}
+/* :where — MUI 에선 같은 클래스 안의 값이라 sx 가 덮는다(푸터 구분선 위아래 6.4px) */
+.MuiDivider-middle:where(.MuiDivider-vertical) {
+	margin-top: 8px;
+	margin-bottom: 8px;
+}
+.MuiDivider-middle:where(:not(.MuiDivider-vertical)) {
+	margin-left: 16px;
+	margin-right: 16px;
+}
+
+/* 사진 */
+.MuiCardMedia-root {
+	display: block;
+	background-size: cover;
+	background-repeat: no-repeat;
+	background-position: center;
+}
+.MuiCardMedia-img {
+	width: 100%;
+	object-fit: cover;
+}
+
+/* 종이 · 카드 — theme MuiCard(모서리 12, 옅은 그림자, 반투명 흰 바탕) */
+.MuiPaper-root {
+	background-color: #fff;
+	color: var(--mui-text-primary);
+	transition: box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+.MuiPaper-rounded {
+	border-radius: 8px;
+}
+.MuiPaper-elevation1 {
+	box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.08);
+}
+.MuiPaper-outlined {
+	border: 1px solid var(--mui-divider);
+}
+.MuiCard-root {
+	overflow: hidden;
+	border-radius: 12px;
+	background: #ffffff4f;
+}
+.MuiCard-root.MuiPaper-elevation1 {
+	box-shadow:
+		0px 5px 22px rgba(0, 0, 0, 0.04),
+		0px 0px 0px 0.5px rgba(0, 0, 0, 0.03);
+}
+/* 사용자 화면 카드 = 얇은 청록 선 + 둥근 모서리 18 + 아주 옅은 그림자(토큰 --zbd-card-*). 관리자(html.zbd-admin)·앱 창(.window)·체험 무대(.stage) 는 제외.
+   :where 로 구체성을 클래스 2개에 묶어 — 화면마다 따로 준 모양(스코프 클래스)·미니홈피 편집(.mini-mui) 이 그대로 이긴다. */
+:where(html:not(.zbd-admin)) .MuiCard-root.MuiPaper-elevation1:where(:not(.window, .stage)) {
+	border: 1px solid var(--zbd-card-line);
+	border-radius: var(--zbd-card-radius);
+	box-shadow: var(--zbd-card-shadow);
+}
+
+/* 관리자 — 카드 안의 카드(PageDefault 본문 카드 안쪽) = 얇은 선 + 모서리 14 + 그림자 없음(2026-10-04 대표 — 환경 설정 묶음 settings/ui/SettingGroup 과 같은 모양).
+   바깥 본문 카드는 그대로(옅은 그림자). 안쪽 카드를 새로 만들 때 따로 그림자·테두리를 주지 말 것 — 이 규칙이 맞춘다. */
+:where(html.zbd-admin) .MuiCard-root .MuiCard-root.MuiPaper-elevation1 {
+	border: 1px solid var(--adm-divider, #eaecf0);
+	border-radius: 14px;
+	box-shadow: none;
+	background: var(--adm-paper, #fff);
+}
+
+/* 서랍(Drawer) · 바탕 막(Backdrop) — 화면 맨 바깥(body) 에 그린다 */
+.MuiModal-root {
+	position: fixed;
+	z-index: 1300;
+	inset: 0;
+}
+.MuiDrawer-root.MuiModal-root {
+	z-index: 1200;
+}
+.MuiBackdrop-root {
+	position: fixed;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	inset: 0;
+	background-color: rgba(0, 0, 0, 0.5);
+	-webkit-tap-highlight-color: transparent;
+	z-index: -1;
+}
+.MuiDrawer-paper {
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	flex: 1 0 auto;
+	z-index: 1200;
+	-webkit-overflow-scrolling: touch;
+	position: fixed;
+	top: 0;
+	outline: 0;
+}
+.MuiDrawer-paperAnchorRight {
+	right: 0;
+}
+.MuiDrawer-paperAnchorLeft {
+	left: 0;
+}
+.MuiDrawer-paperAnchorBottom {
+	top: auto;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	height: auto;
+	max-height: 100%;
+}
+
+/* 그림자 단계 — fe-service theme/create-shadows.ts (elevation N = shadows[N]) */
+.MuiPaper-elevation0 {
+	box-shadow: none;
+}
+.MuiPaper-elevation2 {
+	box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.08);
+}
+.MuiPaper-elevation3 {
+	box-shadow: 0px 1px 8px rgba(0, 0, 0, 0.08);
+}
+.MuiPaper-elevation4 {
+	box-shadow: 0px 1px 10px rgba(0, 0, 0, 0.08);
+}
+.MuiPaper-elevation6 {
+	box-shadow: 0px 1px 18px rgba(0, 0, 0, 0.08);
+}
+.MuiPaper-elevation8 {
+	box-shadow: 0px 3px 14px rgba(0, 0, 0, 0.08);
+}
+.MuiPaper-elevation16 {
+	box-shadow: 0px 6px 30px rgba(0, 0, 0, 0.08);
+}
+.MuiPaper-elevation24 {
+	box-shadow: 0px 9px 46px rgba(0, 0, 0, 0.08);
+}
+
+/* ── 입력칸(OutlinedInput) · 선택 상자(Select) — MUI 9 기본 + theme MuiOutlinedInput ─────────── */
+.MuiInputBase-root {
+	font-family: var(--mui-font);
+	font-weight: 400;
+	font-size: 1rem;
+	line-height: 1.4375em;
+	color: var(--mui-text-primary);
+	box-sizing: border-box;
+	position: relative;
+	cursor: text;
+	display: inline-flex;
+	align-items: center;
+}
+.MuiInputBase-adornedStart.MuiOutlinedInput-root {
+	padding-left: 14px;
+}
+.MuiInputBase-inputAdornedStart.MuiOutlinedInput-input {
+	padding-left: 0;
+}
+.MuiInputAdornment-root {
+	display: flex;
+	max-height: 2em;
+	align-items: center;
+	white-space: nowrap;
+	color: rgb(108, 115, 127);
+}
+.MuiInputAdornment-positionStart {
+	margin-right: 8px;
+}
+.MuiOutlinedInput-root {
+	position: relative;
+	border-radius: 4px;
+}
+.MuiOutlinedInput-root:hover {
+	background-color: var(--mui-action-hover);
+}
+.MuiInputBase-input {
+	font: inherit;
+	letter-spacing: inherit;
+	color: currentColor;
+	padding: 4px 0 5px;
+	border: 0;
+	box-sizing: content-box;
+	background: none;
+	height: 1.4375em;
+	margin: 0;
+	-webkit-tap-highlight-color: transparent;
+	display: block;
+	min-width: 0;
+	width: 100%;
+}
+.MuiInputBase-input:focus {
+	outline: 0;
+}
+.MuiOutlinedInput-input {
+	padding: 16.5px 14px;
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 24px;
+	height: 24px;
+}
+.MuiInputBase-sizeSmall .MuiOutlinedInput-input {
+	padding-top: 8.5px;
+	padding-bottom: 8.5px;
+}
+.MuiOutlinedInput-notchedOutline {
+	text-align: left;
+	position: absolute;
+	bottom: 0;
+	right: 0;
+	top: -5px;
+	left: 0;
+	margin: 0;
+	padding: 0 8px;
+	pointer-events: none;
+	border-radius: inherit;
+	border-style: solid;
+	border-width: 1px;
+	overflow: hidden;
+	min-width: 0%;
+	border-color: #e5e7eb;
+	transition:
+		border-color 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+		box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+.MuiOutlinedInput-notchedOutline legend {
+	float: unset;
+	width: auto;
+	overflow: hidden;
+	padding: 0;
+	line-height: 11px;
+	transition: width 150ms cubic-bezier(0, 0, 0.2, 1) 0ms;
+}
+.MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+	border-color: var(--theme-color-main);
+	border-width: 1px;
+}
+.MuiOutlinedInput-root.Mui-focused {
+	background-color: transparent;
+}
+.MuiSelect-select.MuiInputBase-input.MuiOutlinedInput-input {
+	padding-right: 32px;
+	min-height: 1.4375em;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	overflow: hidden;
+	cursor: pointer;
+	user-select: none;
+	border-radius: 8px;
+	height: auto;
+}
+.MuiSelect-nativeInput {
+	bottom: 0;
+	left: 0;
+	position: absolute;
+	opacity: 0;
+	pointer-events: none;
+	width: 100%;
+	box-sizing: border-box;
+}
+.MuiSelect-icon {
+	position: absolute;
+	right: 7px;
+	top: calc(50% - 0.5em);
+	pointer-events: none;
+	color: var(--mui-action-active);
+}
+.MuiSvgIcon-root {
+	user-select: none;
+	width: 1em;
+	height: 1em;
+	display: inline-block;
+	flex-shrink: 0;
+	fill: currentColor;
+	font-size: 1.5rem;
+	transition: fill 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+
+/* 펼친 목록(Menu = Popover + Paper + List) */
+.MuiPopover-root {
+	position: fixed;
+	z-index: 1300;
+	inset: 0;
+}
+.MuiPopover-root .MuiBackdrop-root {
+	background-color: transparent;
+}
+.MuiPopover-paper {
+	position: absolute;
+	overflow-y: auto;
+	overflow-x: hidden;
+	min-width: 16px;
+	min-height: 16px;
+	max-width: calc(100% - 32px);
+	max-height: calc(100% - 32px);
+	outline: 0;
+}
+.MuiMenu-paper {
+	max-height: calc(100% - 96px);
+	-webkit-overflow-scrolling: touch;
+}
+.MuiList-root {
+	list-style: none;
+	margin: 0;
+	padding: 8px 0;
+	position: relative;
+	outline: 0;
+}
+.MuiMenuItem-root {
+	font-family: var(--mui-font);
+	font-weight: 400;
+	font-size: 16px;
+	line-height: 1.5;
+	display: flex;
+	justify-content: flex-start;
+	align-items: center;
+	position: relative;
+	text-decoration: none;
+	min-height: 48px;
+	padding: 6px 16px;
+	box-sizing: border-box;
+	white-space: nowrap;
+	cursor: pointer;
+}
+@media (min-width: 600px) {
+	.MuiMenuItem-root {
+		min-height: auto;
+	}
+}
+.MuiMenuItem-root:hover {
+	background-color: var(--mui-action-hover);
+}
+.MuiMenuItem-root.Mui-disabled {
+	opacity: 0.38;
+	pointer-events: none;
+}
+.MuiMenuItem-root.Mui-selected {
+	background-color: var(--theme-color-alpha8);
+}
+
+/* ── 표(Table) — theme MuiTable·MuiTableCell·MuiTableHead ─────────── */
+.MuiTable-root {
+	display: table;
+	width: 100%;
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+.MuiTable-root td {
+	padding: 4px 16px;
+}
+.MuiTableHead-root {
+	display: table-header-group;
+	border-bottom: none;
+}
+.MuiTableBody-root {
+	display: table-row-group;
+}
+.MuiTableRow-root {
+	color: inherit;
+	display: table-row;
+	vertical-align: middle;
+	outline: 0;
+}
+.MuiTableCell-root {
+	font-family: var(--mui-font);
+	font-weight: 400;
+	font-size: 14px;
+	line-height: 1.5;
+	display: table-cell;
+	vertical-align: inherit;
+	border-bottom: 1px solid var(--mui-divider);
+	text-align: left;
+	padding: 8px 16px;
+}
+.MuiTableCell-head {
+	color: var(--mui-text-primary);
+	line-height: 1.5rem;
+	font-weight: 500;
+}
+.MuiTableCell-body {
+	color: var(--mui-text-primary);
+}
+.MuiTableHead-root .MuiTableCell-root {
+	border-bottom: none;
+	font-weight: 600;
+	line-height: 1.4;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+}
+.MuiTableCell-alignLeft {
+	text-align: left;
+}
+.MuiTableCell-alignCenter {
+	text-align: center;
+}
+.MuiTableCell-alignRight {
+	text-align: right;
+	flex-direction: row-reverse;
+}
+
+/* ── 쪽 번호(Pagination outlined rounded) ─────────── */
+.MuiPagination-ul {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+.MuiPaginationItem-root {
+	font-family: var(--mui-font);
+	font-weight: 400;
+	font-size: 14px;
+	line-height: 1.5;
+	border-radius: 16px;
+	text-align: center;
+	box-sizing: border-box;
+	min-width: 32px;
+	height: 32px;
+	padding: 0 6px;
+	margin: 0 3px;
+	color: var(--mui-text-primary);
+}
+.MuiPaginationItem-page {
+	transition:
+		color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+		background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+.MuiPaginationItem-page:hover {
+	background-color: var(--mui-action-hover);
+}
+.MuiPaginationItem-outlined {
+	border: 1px solid rgba(0, 0, 0, 0.23);
+}
+.MuiPaginationItem-rounded {
+	border-radius: 8px;
+}
+.MuiPaginationItem-root.Mui-selected {
+	/* 색 지정 없는 기본(standard) — 선택 칸은 회색 바탕(action.selected) */
+	background-color: rgba(17, 25, 39, 0.12);
+}
+.MuiPaginationItem-root.Mui-disabled {
+	opacity: 0.38;
+	pointer-events: none;
+}
+.MuiPaginationItem-icon {
+	font-size: 1.25rem;
+	margin: 0 -8px;
+}
+.MuiPaginationItem-ellipsis {
+	height: auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* ── 버튼(Button) — theme MuiButton(모서리 4, 대문자 없음, 줄높이 1.715, 여백 10/16) ─────────── */
+.MuiButton-root {
+	font-family: var(--mui-font);
+	font-weight: 600;
+	font-size: 0.875rem;
+	line-height: 1.715;
+	text-transform: none;
+	min-width: 64px;
+	padding: 10px 16px;
+	border-radius: 4px;
+	transition:
+		background-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+		box-shadow 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+		border-color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+		color 250ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+.MuiButton-text {
+	color: var(--theme-color-main);
+}
+.MuiButton-text:hover {
+	background-color: var(--theme-color-alpha4);
+}
+.MuiButton-outlined {
+	border: 1px solid var(--theme-color-alpha50);
+	color: var(--theme-color-main);
+}
+.MuiButton-outlined:hover {
+	border-color: var(--theme-color-main);
+	background-color: var(--theme-color-alpha4);
+}
+.MuiButton-contained {
+	color: var(--theme-color-contrastText, #fff);
+	background-color: var(--theme-color-main);
+	box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.08);
+}
+.MuiButton-contained:hover {
+	background-color: var(--theme-color-dark);
+	color: var(--theme-color-contrastText, #fff);
+}
+.MuiButton-sizeSmall {
+	font-size: 0.8125rem;
+}
+.MuiButton-root.Mui-disabled {
+	color: rgba(17, 25, 39, 0.38);
+	pointer-events: none;
+}
+.MuiButton-contained.Mui-disabled {
+	background-color: rgba(17, 25, 39, 0.12);
+	box-shadow: none;
+}
+.MuiButton-startIcon {
+	display: inherit;
+	margin-right: 8px;
+	margin-left: -4px;
+}
+.MuiButton-iconSizeSmall > *:nth-of-type(1) {
+	font-size: 18px;
+}
+.MuiButton-iconSizeMedium > *:nth-of-type(1) {
+	font-size: 20px;
+}
+.MuiButton-iconSizeLarge > *:nth-of-type(1) {
+	font-size: 22px;
+}
+.MuiButton-endIcon {
+	display: inherit;
+	margin-right: -4px;
+	margin-left: 8px;
+}
+
+/* ── 칩(Chip) ─────────── */
+.MuiChip-root {
+	max-width: 100%;
+	font-family: var(--mui-font);
+	font-size: 0.8125rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	height: 32px;
+	color: var(--mui-text-primary);
+	background-color: rgba(17, 25, 39, 0.12);
+	border-radius: 16px;
+	white-space: nowrap;
+	transition:
+		background-color 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+		box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+	cursor: unset;
+	outline: 0;
+	text-decoration: none;
+	border: 0;
+	padding: 0;
+	vertical-align: middle;
+	box-sizing: border-box;
+}
+.MuiChip-sizeSmall {
+	height: 24px;
+}
+.MuiChip-outlined {
+	background-color: transparent;
+	border: 1px solid #bdbdbd;
+}
+.MuiChip-outlinedPrimary {
+	color: var(--theme-color-main);
+	border: 1px solid var(--theme-color-alpha50);
+}
+.MuiChip-filledPrimary {
+	color: var(--theme-color-contrastText, #fff);
+	background-color: var(--theme-color-main);
+}
+.MuiChip-label {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	padding-left: 12px;
+	padding-right: 12px;
+	white-space: nowrap;
+}
+.MuiChip-labelSmall {
+	padding-left: 8px;
+	padding-right: 8px;
+}
+.MuiChip-outlined .MuiChip-labelSmall {
+	padding-left: 7px;
+	padding-right: 7px;
+}
+/* 운영 MUI 가 실제로 그린 값(스토어 칩, 2026-10-03 규칙 원문에서) */
+.MuiChip-root {
+	line-height: 1.5;
+	position: relative;
+}
+.MuiChip-clickable {
+	user-select: none;
+	-webkit-tap-highlight-color: transparent;
+	cursor: pointer;
+}
+.MuiChip-clickable.MuiChip-filledDefault:hover {
+	background-color: rgba(17, 25, 39, 0.2);
+}
+.MuiChip-clickable.MuiChip-outlined:hover {
+	background-color: rgba(17, 25, 39, 0.04);
+}
+.MuiChip-clickable.MuiChip-filledPrimary:hover {
+	background-color: var(--theme-color-dark, #1f5a54);
+}
+.MuiChip-filledPrimary {
+	border: 0;
+}
+.MuiChip-outlinedDefault {
+	/* 값은 같은 #111927 — 고정값이면 관리자 다크모드에서 글자가 바탕에 묻혔다 */
+	color: var(--mui-text-primary);
+	border: 1px solid rgb(189, 189, 189);
+}
+.MuiChip-outlinedInfo {
+	color: rgb(2, 136, 209);
+	border: 1px solid rgba(2, 136, 209, 0.7);
+}
+.MuiChip-filledInfo {
+	color: #fff;
+	background-color: rgb(2, 136, 209);
+}
+.MuiChip-filledWarning {
+	color: #fff;
+	background-color: #ef6c00;
+}
+.MuiChip-outlinedWarning {
+	color: #ef6c00;
+	border: 1px solid rgba(239, 108, 0, 0.7);
+}
+.MuiChip-filledSuccess {
+	color: #fff;
+	background-color: #10b981;
+}
+.MuiChip-filledError {
+	color: #fff;
+	background-color: #d32f2f;
+}
+.MuiChip-icon {
+	margin-left: 5px;
+	margin-right: -6px;
+	color: rgb(97, 97, 97);
+}
+.MuiChip-outlined .MuiChip-icon {
+	margin-left: 4px;
+}
+.MuiChip-iconSmall {
+	font-size: 18px;
+	margin-left: 4px;
+	margin-right: -4px;
+}
+.MuiChip-outlined .MuiChip-iconSmall {
+	margin-left: 2px;
+}
+.MuiChip-filled .MuiChip-iconColorPrimary,
+.MuiChip-filledPrimary .MuiChip-icon {
+	color: inherit;
+}
+.MuiChip-outlinedPrimary .MuiChip-icon {
+	color: var(--theme-color-main);
+}
+.MuiChip-outlined .MuiChip-icon ~ .MuiChip-labelMedium {
+	padding-left: 11px;
+	padding-right: 11px;
+}
+
+/* ── 입력칸 묶음(TextField) · 여러 줄 ─────────── */
+.MuiFormControl-root {
+	display: inline-flex;
+	flex-direction: column;
+	position: relative;
+	min-width: 0;
+	padding: 0;
+	margin: 0;
+	border: 0;
+	vertical-align: top;
+}
+.MuiFormControl-fullWidth,
+.MuiInputBase-fullWidth {
+	width: 100%;
+}
+.MuiInputBase-multiline {
+	padding: 4px 0 5px;
+}
+.MuiOutlinedInput-root.MuiInputBase-multiline {
+	padding: 16.5px 14px;
+}
+.MuiOutlinedInput-root.MuiInputBase-multiline.MuiInputBase-sizeSmall {
+	padding-top: 8.5px;
+	padding-bottom: 8.5px;
+}
+.MuiInputBase-inputMultiline {
+	resize: none;
+	padding: 0;
+}
+.MuiOutlinedInput-root.MuiInputBase-multiline .MuiOutlinedInput-input {
+	padding: 0;
+	height: auto;
+}
+.MuiInputBase-input::placeholder {
+	color: #2f3746;
+	opacity: 0.3;
+}
+.MuiInputBase-root.Mui-disabled {
+	color: rgba(17, 25, 39, 0.38);
+	cursor: default;
+}
+.MuiInputBase-input.Mui-disabled {
+	opacity: 1;
+	-webkit-text-fill-color: rgba(17, 25, 39, 0.38);
+}
+.MuiOutlinedInput-root.Mui-disabled {
+	background-color: var(--mui-action-hover);
+}
+.MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline {
+	border-color: #e5e7eb;
+}
+
+/* ── 스위치 · 체크박스 · 이름표(FormControlLabel) ─────────── */
+.MuiFormControlLabel-root {
+	display: inline-flex;
+	align-items: center;
+	cursor: pointer;
+	vertical-align: middle;
+	-webkit-tap-highlight-color: transparent;
+	margin-left: -11px;
+	margin-right: 16px;
+	width: fit-content;
+}
+.MuiFormControlLabel-label {
+	font-size: 0.75rem;
+}
+.MuiSwitch-root {
+	display: inline-flex;
+	width: 58px;
+	height: 38px;
+	overflow: hidden;
+	padding: 12px;
+	box-sizing: border-box;
+	position: relative;
+	flex-shrink: 0;
+	z-index: 0;
+	vertical-align: middle;
+}
+.MuiSwitch-sizeSmall {
+	width: 40px;
+	height: 24px;
+	padding: 7px;
+}
+.MuiSwitch-switchBase {
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 1;
+	color: #fff;
+	transition:
+		left 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+		transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+	padding: 9px;
+	border-radius: 50%;
+}
+.MuiSwitch-sizeSmall .MuiSwitch-switchBase {
+	padding: 4px;
+}
+.MuiSwitch-switchBase.Mui-checked {
+	transform: translateX(20px);
+	color: var(--theme-color-main);
+}
+.MuiSwitch-sizeSmall .MuiSwitch-switchBase.Mui-checked {
+	transform: translateX(16px);
+}
+.MuiSwitch-switchBase .MuiSwitch-input {
+	left: -100%;
+	width: 300%;
+	cursor: inherit;
+	position: absolute;
+	opacity: 0;
+	height: 100%;
+	top: 0;
+	margin: 0;
+	padding: 0;
+	z-index: 1;
+}
+.MuiSwitch-thumb {
+	box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.08);
+	background-color: currentColor;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+}
+.MuiSwitch-sizeSmall .MuiSwitch-thumb {
+	width: 16px;
+	height: 16px;
+}
+.MuiSwitch-track {
+	height: 100%;
+	width: 100%;
+	border-radius: 7px;
+	z-index: -1;
+	transition:
+		opacity 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+		background-color 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+	background-color: #000;
+	opacity: 0.38;
+}
+.MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track {
+	opacity: 0.5;
+	background-color: var(--theme-color-main);
+}
+.MuiCheckbox-root {
+	padding: 9px;
+	border-radius: 50%;
+	color: rgba(0, 0, 0, 0.6);
+}
+.MuiCheckbox-sizeSmall {
+	padding: 9px;
+}
+.MuiCheckbox-root.Mui-checked {
+	color: var(--theme-color-main);
+}
+.PrivateSwitchBase-input {
+	cursor: inherit;
+	position: absolute;
+	opacity: 0;
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+	margin: 0;
+	padding: 0;
+	z-index: 1;
+}
+.MuiSvgIcon-fontSizeSmall {
+	font-size: 1.25rem;
+}
+.MuiSvgIcon-fontSizeLarge {
+	font-size: 2.1875rem;
+}
+.MuiSvgIcon-fontSizeInherit {
+	font-size: inherit;
+}
+.MuiIconButton-sizeLarge {
+	padding: 12px;
+	font-size: 1.75rem;
+}
+.MuiIconButton-root.Mui-disabled {
+	background-color: transparent;
+	color: rgba(17, 25, 39, 0.38);
+	pointer-events: none;
+}
+.MuiIconButton-colorPrimary {
+	color: var(--theme-color-main);
+}
+.MuiIconButton-colorError {
+	color: #f04438;
+}
+.MuiButton-sizeLarge {
+	font-size: 0.9375rem;
+}
+
+/* ── 사진 동그라미(Avatar) ─────────── */
+.MuiAvatar-root {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 40px;
+	height: 40px;
+	font-family: var(--mui-font);
+	font-size: 14px;
+	font-weight: 600;
+	letter-spacing: 0;
+	line-height: 1;
+	border-radius: 50%;
+	overflow: hidden;
+	user-select: none;
+}
+.MuiAvatar-colorDefault {
+	color: #fff;
+	background-color: #bdbdbd;
+}
+.MuiAvatar-img {
+	width: 100%;
+	height: 100%;
+	text-align: center;
+	object-fit: cover;
+	color: transparent;
+	text-indent: 10000px;
+}
+.MuiPaper-outlined.MuiPaper-rounded {
+	border-radius: 8px;
+}
+.MuiSvgIcon-colorWarning {
+	color: #f79009;
+}
+.MuiSvgIcon-colorDisabled {
+	color: rgba(17, 25, 39, 0.38);
+}
+.MuiSvgIcon-colorPrimary {
+	color: var(--theme-color-main);
+}
+
+/* ── 대화 창(Dialog) ─────────── */
+.MuiDialog-root {
+	position: fixed;
+	z-index: 1300;
+	inset: 0;
+}
+.MuiDialog-container {
+	height: 100%;
+	outline: 0;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+.MuiDialog-paper {
+	margin: 32px;
+	position: relative;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	max-height: calc(100% - 64px);
+	max-width: 600px;
+}
+.MuiDialog-paperFullScreen {
+	margin: 0;
+	width: 100%;
+	max-width: 100%;
+	height: 100%;
+	max-height: none;
+	border-radius: 0;
+}
+.MuiDialogTitle-root {
+	margin: 0;
+	padding: 16px 24px;
+	flex: 0 0 auto;
+	font-family: var(--mui-font);
+	font-weight: 700;
+	font-size: 18px;
+	line-height: 1.5;
+}
+.MuiDialogContent-root {
+	flex: 1 1 auto;
+	-webkit-overflow-scrolling: touch;
+	overflow-y: auto;
+	padding: 20px 24px;
+}
+.MuiDialogTitle-root + .MuiDialogContent-root {
+	padding-top: 0;
+}
+.MuiDialogActions-root {
+	display: flex;
+	align-items: center;
+	padding: 8px;
+	justify-content: flex-end;
+	flex: 0 0 auto;
+}
+.MuiDialogActions-spacing > :not(style) ~ :not(style) {
+	margin-left: 8px;
+}
+.MuiCircularProgress-root {
+	display: inline-block;
+	color: var(--theme-color-main);
+	animation: mui-spin 1.4s linear infinite;
+}
+@keyframes mui-spin {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
+}
+.MuiLink-underlineHover {
+	text-decoration: none;
+}
+.MuiLink-underlineHover:hover {
+	text-decoration: underline;
+}
+
+/* Scrollbar(simplebar) 를 품은 종이(서랍·대화 창) — 종이는 스크롤하지 않고 안쪽 막대가 맡는다(ui/Scrollbar.svelte) */
+.MuiDrawer-paper.zbd-sb-paper,
+.MuiDialog-paper.zbd-sb-paper {
+	overflow: hidden;
+}
+/* 종이(세로 flex) 의 남은 높이를 채우고, 넘치면 줄어들어 안에서 스크롤 */
+[data-simplebar].zbd-sb-fill {
+	flex: 1 1 auto;
+	min-height: 0;
+	width: 100%;
+	/* overflow:hidden 을 주지 말 것 — simplebar 가 「스크롤 끔」 으로 읽어 막대를 안 그린다 */
+}
+.zbd-sb-dialog .MuiDialogContent-root {
+	overflow: visible;
+}
+.MuiDialogTitle-root + .zbd-sb-dialog .MuiDialogContent-root {
+	padding-top: 0;
+}

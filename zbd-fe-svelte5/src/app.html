@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<!-- 기본 파비콘(static/assets/favicon.png). 사이트 설정에 파비콘이 있으면 서버(사용자 화면)·관리자 레이아웃이 뒤에서 바꾼다 -->
+		<link rel="icon" id="zbd-favicon" href="/assets/favicon.png" type="image/png" />
+		<script>
+			/* 아이폰·아이패드: 글자 16px 미만 입력칸을 누르면 확대되고 키보드를 닫아도 그대로다 → maximum-scale=1(이 자동 확대만 막힌다, 두 손가락 확대는 그대로). 안드로이드는 손가락 확대가 막히니 iOS 만 */
+			if (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+				var vpi = document.querySelector('meta[name="viewport"]');
+				if (vpi && vpi.content.indexOf('maximum-scale') < 0) vpi.content += ', maximum-scale=1';
+			}
+			/* 시작 중 오류 모으기 — 흰 화면에 멈출 때 원인을 보이려고 */
+			window.__zbdErr = [];
+			addEventListener(
+				'error',
+				function (e) {
+					window.__zbdErr.push((e.message || (e.target && (e.target.src || e.target.href)) || 'error') + '');
+				},
+				true
+			);
+			addEventListener('unhandledrejection', function (e) {
+				window.__zbdErr.push('promise: ' + ((e.reason && (e.reason.message || e.reason)) || ''));
+			});
+		</script>
+		<!-- 앱 CSS·스크립트는 자리표보다 **앞에** — 서버가 끼우는 머리말에 운영자 HTML(<div class="copyright-html"> 등) 이 섞여 있어
+		     브라우저가 거기서 <head> 를 닫는다. 뒤에 있으면 앱 CSS 가 body 로 밀려 운영자·sx CSS 보다 늦게 읽혀 덮는다(2026-10-03 GNB 세로 깨짐) -->
+		%sveltekit.head%
+		<!-- 서버(BE)가 채우는 자리표 — 이름을 바꾸면 서버도 같이 바꾼다(CLAUDE.md 2) -->
+		<!--zbd:head-->
+		<!--zbd:data-->
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div id="root" style="width: 100%">%sveltekit.body%</div>
+		<!--zbd:body-->
+	</body>
+</html>

@@ -1,0 +1,748 @@
+/* 묶음 C(협업) 화면이 같이 쓰는 MUI 모양 중 바탕(admin.css)·공용(mui.css) 에 없는 것 — 구체성은 클래스 하나(:where) */
+:where(html.zbd-admin) .MuiChip-sizeSmall .MuiChip-icon {
+	margin-left: 4px;
+	margin-right: -4px;
+	font-size: 18px;
+	color: inherit;
+}
+:where(html.zbd-admin) .MuiChip-icon {
+	margin-left: 5px;
+	margin-right: -6px;
+	color: var(--adm-action);
+}
+:where(html.zbd-admin) .MuiChip-outlined .MuiChip-icon {
+	margin-left: 4px;
+}
+:where(html.zbd-admin) .MuiChip-outlined .MuiChip-iconSmall {
+	margin-left: 2px;
+}
+:where(html.zbd-admin) .MuiChip-clickable {
+	cursor: pointer;
+	user-select: none;
+}
+:where(html.zbd-admin) .MuiChip-clickable:hover {
+	background-color: rgba(17, 25, 39, 0.2);
+}
+:where(html.zbd-admin) .MuiChip-outlined.MuiChip-clickable:hover {
+	background-color: var(--adm-hover);
+}
+:where(html.zbd-admin) .MuiChip-deleteIcon {
+	cursor: pointer;
+	margin: 0 5px 0 -6px;
+	font-size: 22px;
+	color: rgba(17, 25, 39, 0.26);
+}
+:where(html.zbd-admin) .MuiChip-sizeSmall .MuiChip-deleteIcon {
+	font-size: 16px;
+	margin-right: 4px;
+	margin-left: -4px;
+}
+:where(html.zbd-admin) .MuiChip-filledDefault {
+	background-color: rgba(17, 25, 39, 0.08);
+}
+:where(html.zbd-admin) .MuiChip-outlinedDefault {
+	border: 1px solid var(--adm-n200);
+}
+:where(html.zbd-admin) .MuiChip-outlinedWarning {
+	color: var(--adm-warning-main);
+	border: 1px solid var(--adm-warning-main);
+}
+:where(html.zbd-admin) .MuiChip-outlinedError,
+:where(html.zbd-admin) .MuiChip-filledError {
+	color: var(--adm-error-main);
+	border: 1px solid var(--adm-error-main);
+}
+:where(html.zbd-admin) .MuiChip-filledError {
+	color: #fff;
+	background-color: var(--adm-error-main);
+}
+/* 가로 막대(LinearProgress determinate) */
+:where(html.zbd-admin) .MuiLinearProgress-root {
+	position: relative;
+	overflow: hidden;
+	display: block;
+	height: 4px;
+	z-index: 0;
+	background-color: var(--theme-color-alpha30, rgba(0, 0, 0, 0.1));
+}
+:where(html.zbd-admin) .MuiLinearProgress-bar {
+	width: 100%;
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	top: 0;
+	transition: transform 0.4s linear;
+	transform-origin: left;
+	background-color: var(--theme-color-main);
+}
+/* 메뉴 줄의 아이콘 */
+:where(html.zbd-admin) .MuiMenuItem-root {
+	font-size: 14px;
+}
+.adm-c-contents {
+	display: contents;
+}
+/* 쪽 번호 small(text·circular) — ui/Pager.svelte */
+:where(html.zbd-admin) .adm-pager .MuiPagination-ul {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	padding: 0;
+	margin: 0;
+	list-style: none;
+}
+:where(html.zbd-admin) .adm-pager .MuiPaginationItem-root {
+	font-family: var(--mui-font);
+	font-weight: 400;
+	font-size: 0.8125rem;
+	line-height: 1.43;
+	border-radius: 13px;
+	text-align: center;
+	box-sizing: border-box;
+	min-width: 26px;
+	height: 26px;
+	padding: 0 4px;
+	margin: 0 1px;
+	color: var(--adm-text);
+	background: transparent;
+	border: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+}
+:where(html.zbd-admin) .adm-pager .MuiPaginationItem-ellipsis {
+	height: auto;
+	cursor: default;
+}
+:where(html.zbd-admin) .adm-pager .MuiPaginationItem-root:hover {
+	background-color: var(--adm-hover);
+}
+:where(html.zbd-admin) .adm-pager .MuiPaginationItem-root.Mui-selected {
+	background-color: var(--adm-selected);
+}
+:where(html.zbd-admin) .adm-pager .MuiPaginationItem-root.Mui-disabled {
+	opacity: 0.38;
+	cursor: default;
+	background: transparent;
+}
+:where(html.zbd-admin) .adm-pager .MuiPaginationItem-icon {
+	font-size: 1.125rem;
+	width: 1em;
+	height: 1em;
+	margin: 0 -8px;
+	fill: currentColor;
+}
+/* 버튼 앞 아이콘 크기(MUI .MuiButton-iconSize*) — 공용 mui.css 에 없다(바탕 요청 후보) */
+:where(html.zbd-admin) .MuiButton-iconSizeSmall > :nth-of-type(1) {
+	font-size: 18px;
+}
+:where(html.zbd-admin) .MuiButton-iconSizeMedium > :nth-of-type(1) {
+	font-size: 20px;
+}
+:where(html.zbd-admin) .MuiButton-iconSizeLarge > :nth-of-type(1) {
+	font-size: 22px;
+}
+/* 창 제목(React 관리자 테마 MuiDialogTitle 16px/24px) — 바탕 ui/Dialog 는 h6(18px/27px) 로 그린다(바탕 요청 후보) */
+:where(html.zbd-admin) .MuiDialogTitle-root {
+	font-size: 16px;
+	line-height: 24px;
+}
+/* 메일 쓰기 편집기 — 메뉴줄 없이(React menubar={false}). 공용 TinyMceEditor 에 menubar 칸이 생기면 지운다 */
+.adm-no-menubar .tox .tox-menubar {
+	display: none;
+}
+/* 메신저 「입력중」 점 세 개 */
+.adm-typing {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 10px 12.8px;
+	border-radius: 16px;
+	background-color: var(--zc-fff, #fff);
+	border: 1px solid var(--adm-divider);
+}
+.adm-typing span {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	background-color: #31726c;
+	animation: zbdTypingDot 1.2s infinite ease-in-out;
+}
+.adm-typing span:nth-of-type(2) {
+	animation-delay: 0.15s;
+}
+.adm-typing span:nth-of-type(3) {
+	animation-delay: 0.3s;
+}
+@keyframes zbdTypingDot {
+	0%,
+	60%,
+	100% {
+		transform: translateY(0);
+		opacity: 0.35;
+	}
+	30% {
+		transform: translateY(-5px);
+		opacity: 1;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.adm-typing span {
+		animation: none;
+		opacity: 0.6;
+	}
+}
+/* 마크다운 보기 — 언어가 붙은 코드 블록은 react-syntax-highlighter 기본 모양(<pre> 안 회색 상자), 언어 없는 블록은 브라우저 기본 */
+.adm-md pre {
+	margin: 1em 0;
+}
+.adm-md pre > code[class*='language-'] {
+	display: block;
+	overflow-x: auto;
+	padding: 0.5em;
+	margin: 0;
+	background: #f0f0f0;
+	color: #444;
+	border-radius: 4px;
+	font-size: 0.875rem;
+	white-space: pre;
+}
+.adm-md img {
+	display: inline;
+}
+/* 작업 중 점(깜빡임) */
+.adm-pulse {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background-color: #e67e22;
+	animation: ccPulse 1.2s infinite;
+}
+@keyframes ccPulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.3;
+	}
+}
+/* 글 편집 칸(CodeArea) — Monaco vs-dark 에 가깝게 */
+.adm-code {
+	display: flex;
+	height: 100%;
+	min-height: 0;
+	background: #1e1e1e;
+	color: #d4d4d4;
+	font-family: Menlo, Monaco, 'Courier New', monospace;
+	font-size: 14px;
+	line-height: 21px;
+}
+.adm-code-gutter {
+	flex: 0 0 auto;
+	min-width: 62px;
+	padding: 16px 8px 0 8px;
+	color: #858585;
+	text-align: right;
+	overflow: hidden;
+	user-select: none;
+	box-sizing: border-box;
+}
+.adm-code-body {
+	flex: 1;
+	min-width: 0;
+	position: relative;
+	display: flex;
+}
+.adm-code-mirror {
+	position: absolute;
+	visibility: hidden;
+	top: 0;
+	left: 0;
+	padding: 0 8px 0 18px;
+	box-sizing: border-box;
+	white-space: pre-wrap;
+	word-break: break-word;
+	tab-size: 2;
+	pointer-events: none;
+}
+.adm-code textarea {
+	flex: 1;
+	min-width: 0;
+	box-sizing: border-box;
+	border: 0;
+	outline: 0;
+	resize: none;
+	padding: 16px 8px 0 18px;
+	margin: 0;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	line-height: inherit;
+	white-space: pre-wrap;
+	word-break: break-word;
+	tab-size: 2;
+}
+/* 토글 버튼 묶음(MUI ToggleButtonGroup small) — 웹하드 보기 모드 */
+.adm-tbg {
+	display: inline-flex;
+	border-radius: 8px;
+}
+.adm-tbg .MuiToggleButton-root {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 2px 8px;
+	border: 1px solid var(--adm-divider);
+	color: var(--adm-action);
+	background: transparent;
+	cursor: pointer;
+	border-radius: 0;
+	margin: 0;
+}
+.adm-tbg .MuiToggleButton-root + .MuiToggleButton-root {
+	margin-left: -1px;
+	border-left-color: transparent;
+}
+.adm-tbg .adm-tip-host:first-child .MuiToggleButton-root,
+.adm-tbg > .MuiToggleButton-root:first-child {
+	border-top-left-radius: 8px;
+	border-bottom-left-radius: 8px;
+}
+.adm-tbg .adm-tip-host:last-child .MuiToggleButton-root,
+.adm-tbg > .MuiToggleButton-root:last-child {
+	border-top-right-radius: 8px;
+	border-bottom-right-radius: 8px;
+}
+.adm-tbg .MuiToggleButton-root:hover {
+	background-color: var(--adm-hover);
+}
+.adm-tbg .MuiToggleButton-root.Mui-selected {
+	color: var(--adm-text);
+	background-color: var(--adm-selected);
+}
+.adm-md a {
+	color: -webkit-link;
+	text-decoration: underline;
+	font-weight: inherit;
+}
+
+/* 업무 보드 — 담당자 목록 줄 올리기 */
+.adm-cv-pick:hover {
+	background-color: var(--zc-f5f5f5, #f5f5f5) !important;
+}
+.adm-cv-desc p {
+	margin: 0;
+}
+.adm-cv-dev .MuiButtonBase-root {
+	padding-left: 1.6px;
+	padding-right: 1.6px;
+}
+/* 라디오(Radios.svelte) */
+:where(html.zbd-admin) .adm-c-radio {
+	position: relative;
+	display: flex;
+	width: 1em;
+	height: 1em;
+	font-size: 24px;
+}
+:where(html.zbd-admin) .adm-c-radio svg {
+	width: 1em;
+	height: 1em;
+	fill: currentColor;
+	flex-shrink: 0;
+}
+:where(html.zbd-admin) .adm-c-radio .adm-c-radio-dot {
+	position: absolute;
+	left: 0;
+	transform: scale(0);
+	transition: transform 150ms cubic-bezier(0.4, 0, 1, 1);
+}
+:where(html.zbd-admin) .adm-c-radio .adm-c-radio-dot.on {
+	transform: scale(1);
+	transition: transform 150ms cubic-bezier(0, 0, 0.2, 1);
+}
+.adm-cv-tree:hover {
+	background-color: var(--adm-hover);
+}
+/* 칩 아바타(MUI Chip avatar) */
+:where(html.zbd-admin) .MuiChip-root .MuiChip-avatar {
+	margin-left: 5px;
+	margin-right: -6px;
+	width: 24px;
+	height: 24px;
+	font-size: 0.75rem;
+	color: var(--gt-700, #616161);
+}
+:where(html.zbd-admin) .MuiChip-root .MuiChip-avatarSmall {
+	margin-left: 4px;
+	margin-right: -4px;
+	width: 18px;
+	height: 18px;
+	font-size: 0.625rem;
+}
+:where(html.zbd-admin) .MuiChip-outlined .MuiChip-avatarSmall {
+	margin-left: 2px;
+}
+:where(html.zbd-admin) .MuiChip-outlinedDefault {
+	border-color: #bdbdbd;
+}
+:where(html.zbd-admin[data-mode='dark']) .MuiChip-outlinedDefault {
+	border-color: #616161;
+}
+.adm-cv-target,
+.adm-cv-target td {
+	background-color: #fff9c4 !important;
+}
+.adm-cv-shape-row:hover,
+.adm-cv-shape-row:hover td {
+	background-color: var(--gt-100, #f8f8f8);
+}
+.adm-cv-more:hover {
+	color: var(--theme-color-main) !important;
+}
+/* React MuiTableCell(body) 줄 높이는 1.5 — 바탕 admin.css 는 1.43(바탕 요청). 업무 보드 표만 맞춘다 */
+:where(html.zbd-admin) .adm-cv-table .MuiTableCell-body {
+	line-height: 1.5;
+}
+/* MUI 작은 버튼의 앞·뒤 아이콘 여백은 -2px(공용 mui.css 는 크기 상관없이 -4px — shared 요청) */
+html.zbd-admin .MuiButton-startIcon.MuiButton-iconSizeSmall {
+	margin-left: -2px;
+}
+html.zbd-admin .MuiButton-endIcon.MuiButton-iconSizeSmall {
+	margin-right: -2px;
+}
+.adm-cv-kanban::-webkit-scrollbar {
+	height: 10px;
+}
+.adm-cv-kanban::-webkit-scrollbar-thumb {
+	background-color: var(--gt-300, #e0e0e0);
+	border-radius: 16px;
+}
+:where(html.zbd-admin) .MuiCard-root.adm-cv-kcard {
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+:where(html.zbd-admin) .MuiCard-root.adm-cv-kcard:hover {
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
+}
+.adm-cv-kcard:active {
+	cursor: grabbing !important;
+}
+.adm-cv-ktitle:hover {
+	text-decoration: underline !important;
+}
+
+/* 업무 목록 검색 줄(2026-10-12 대표 「검색 UI 전면 개편」) — WorkList · CategoryPopover/StatusLabelFilter 의 pill 모드 */
+.zwf {
+	position: relative;
+	padding: 16px 20px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+.zwf-top {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+.zwf-q {
+	flex: 1;
+	min-width: 0;
+	max-width: 560px;
+}
+.zwf-q .MuiInputBase-root {
+	height: 40px;
+	border-radius: 10px;
+	background: var(--adm-hover, rgba(0, 0, 0, 0.03));
+}
+.zwf-q .MuiOutlinedInput-notchedOutline {
+	border-color: transparent;
+}
+.zwf-q .MuiInputBase-root:hover .MuiOutlinedInput-notchedOutline {
+	border-color: var(--adm-divider);
+}
+.zwf-q .Mui-focused {
+	background: var(--adm-paper, #fff);
+}
+.zwf-seg {
+	display: inline-flex;
+	margin-left: auto;
+	padding: 3px;
+	gap: 2px;
+	border-radius: 10px;
+	background: var(--adm-hover, rgba(0, 0, 0, 0.04));
+}
+.zwf-seg button {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	height: 34px;
+	padding: 0 12px;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--adm-text2);
+	font: inherit;
+	font-size: 13px;
+	cursor: pointer;
+	white-space: nowrap;
+}
+.zwf-seg button:hover {
+	color: var(--adm-text);
+}
+.zwf-seg button.on {
+	background: var(--adm-paper, #fff);
+	color: var(--theme-color-main);
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+.zwf-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 10px;
+	color: var(--adm-text2);
+	flex: none;
+}
+.zwf-icon:hover {
+	background: var(--adm-hover);
+	color: var(--adm-text);
+}
+.zwf-filters {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+.zwf-grow {
+	flex: 1;
+}
+.zwf-sep {
+	width: 1px;
+	height: 20px;
+	background: var(--adm-divider);
+	margin: 0 4px;
+}
+.zwf-pill {
+	display: inline-flex;
+	align-items: center;
+	height: 32px;
+	border: 1px solid var(--adm-divider);
+	border-radius: 999px;
+	background: var(--adm-paper, #fff);
+	color: var(--adm-text);
+	font-size: 13px;
+	transition:
+		border-color 0.15s,
+		background 0.15s;
+}
+.zwf-pill:hover {
+	border-color: var(--adm-text3, #bbb);
+}
+.zwf-pill.on {
+	border-color: var(--theme-color-main);
+	background: var(--theme-color-lightest);
+	color: var(--theme-color-main);
+}
+.zwf-pill .adm-drm-trigger {
+	display: flex;
+	height: 100%;
+}
+.zwf-pill-main {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	height: 100%;
+	padding: 0 12px;
+	border: 0;
+	background: none;
+	color: inherit;
+	font: inherit;
+	cursor: pointer;
+	white-space: nowrap;
+}
+.zwf-pill-k {
+	color: var(--adm-text2);
+}
+.zwf-pill.on .zwf-pill-k {
+	color: inherit;
+	opacity: 0.75;
+}
+.zwf-pill-v {
+	font-weight: 600;
+	max-width: 220px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.zwf-pill-x {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	margin: 0 5px 0 -6px;
+	border: 0;
+	border-radius: 50%;
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
+}
+.zwf-pill-x:hover {
+	background: color-mix(in srgb, currentColor 15%, transparent);
+}
+.zwf-days {
+	width: 34px;
+	height: 22px;
+	padding: 0 4px;
+	border: 1px solid var(--adm-divider);
+	border-radius: 6px;
+	background: var(--adm-paper, #fff);
+	color: var(--adm-text);
+	font: inherit;
+	font-weight: 600;
+	text-align: center;
+}
+.zwf-days::placeholder {
+	color: var(--adm-text2);
+	font-weight: 400;
+}
+.zwf-people {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	flex-wrap: wrap;
+}
+.zwf-person {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 10px 0 3px;
+	border: 1px solid transparent;
+	border-radius: 999px;
+	background: transparent;
+	color: var(--adm-text2);
+	font: inherit;
+	font-size: 13px;
+	cursor: pointer;
+}
+.zwf-person img,
+.zwf-person > span {
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	object-fit: cover;
+	background: var(--gt-300, #e0e0e0);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--adm-text);
+}
+.zwf-person em {
+	font-style: normal;
+}
+.zwf-person:hover {
+	background: var(--adm-hover);
+}
+.zwf-person.on {
+	border-color: var(--theme-color-main);
+	background: var(--theme-color-lightest);
+	color: var(--theme-color-main);
+	font-weight: 600;
+}
+.zwf-switch {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	font-size: 13px;
+	color: var(--adm-text2);
+	cursor: pointer;
+	white-space: nowrap;
+}
+.zwf-text {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	height: 32px;
+	padding: 0 10px;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	color: var(--adm-text2);
+	font: inherit;
+	font-size: 13px;
+	cursor: pointer;
+	white-space: nowrap;
+}
+.zwf-text:hover {
+	background: var(--adm-hover);
+	color: var(--adm-text);
+}
+.zwf-reset {
+	color: var(--adm-error-main, #d32f2f);
+}
+.zwf-reset b {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 18px;
+	height: 18px;
+	padding: 0 5px;
+	border-radius: 9px;
+	background: var(--adm-error-main, #d32f2f);
+	color: #fff;
+	font-size: 11px;
+}
+@media (max-width: 899.95px) {
+	.zwf {
+		padding: 12px 16px;
+		gap: 10px;
+	}
+	.zwf-top {
+		flex-wrap: wrap;
+	}
+	.zwf-q {
+		flex: 1 1 100%;
+		max-width: none;
+		order: -1;
+	}
+	.zwf-seg {
+		margin-left: 0;
+		flex: 1;
+	}
+	.zwf-seg button {
+		flex: 1;
+		justify-content: center;
+	}
+	/* 거르기 알약은 한 줄로 밀어 보기 */
+	.zwf-filters {
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		margin: 0 -16px;
+		padding: 0 16px 2px;
+		scrollbar-width: none;
+	}
+	.zwf-filters::-webkit-scrollbar {
+		display: none;
+	}
+	.zwf-filters > * {
+		flex: none;
+	}
+	.zwf-people {
+		flex-wrap: nowrap;
+	}
+	.zwf-person em {
+		display: none;
+	}
+	.zwf-person {
+		padding: 0 3px;
+	}
+	.zwf-grow {
+		display: none;
+	}
+}

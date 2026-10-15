@@ -1,0 +1,919 @@
+/**
+ * 관리자 화면 모양 — React 관리자(fe-react) 테마(theme/create-*.ts) 를 MUI 이름표 위에 덮는다.
+ *
+ * 전부 `html.zbd-admin` 아래 — 관리자 레이아웃이 그 클래스를 붙이고 떠날 때 뗀다. 그래서 사용자 화면(shared/styles/mui.css) 과 안 섞인다.
+ * 공용 mui.css 가 이미 같은 값을 갖는 것은 다시 적지 않는다(두 React 테마는 거의 같다 — 차이: 글꼴 이름, subtitle1, 글자 보조색,
+ * 카드 바탕, 링크, 버튼 크기, filled 입력칸, 표 머리, 탭, 오른쪽 서랍 폭).
+ * 색은 theme/theme.ts 가 까는 변수(--theme-color-* · --adm-*). 숫자를 화면 코드에 다시 적지 말 것.
+ */
+/* 부품별 모양 — 원래 각 .svelte 의 <style> 에 있던 것.
+ * ⚠ MUI 이름표 버튼(<button class="Mui…">)을 직접 그리는 부품에는 <style> 을 두지 않는다: 그러면 Svelte 가 svelte-xxx 클래스를 붙이고
+ *   공용 app.css 의 button[class*='svelte-'] 초기화(구체성 0,1,1)가 sx·MUI 여백을 이긴다(2026-10-03 실측). 그런 부품의 모양은 여기에. */
+@import './parts.css';
+
+@font-face {
+	font-family: 'Material Symbols Outlined';
+	font-style: normal;
+	font-weight: 100 700;
+	font-display: block;
+	src: url('../fonts/material-symbols-outlined.woff2') format('woff2');
+}
+
+html.zbd-admin {
+	--mui-font: 'Pretendard', 'Inter', -apple-system, Noto Color Emoji, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+	--mui-text-primary: var(--adm-text);
+	--mui-text-secondary: var(--adm-text2);
+	--mui-action-active: var(--adm-action);
+	--mui-action-hover: var(--adm-hover);
+	--mui-divider: var(--adm-divider);
+	--zbd-paper: var(--adm-paper);
+	--zbd-primary: var(--theme-color-main);
+	-moz-osx-font-smoothing: grayscale;
+	-webkit-font-smoothing: antialiased;
+	display: flex;
+	flex-direction: column;
+	min-height: 100%;
+	width: 100%;
+}
+/* CssBaseline(관리자 대시보드) + App.css body */
+html.zbd-admin body {
+	margin: 0;
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	min-height: 100%;
+	width: 100%;
+	font-family: 'pretendard', sans-serif !important;
+	font-size: 16px;
+	font-weight: 400;
+	line-height: 1.5;
+	letter-spacing: normal;
+	color: var(--adm-text);
+	background-color: var(--adm-bg);
+	scrollbar-color: var(--adm-scroll);
+	-webkit-tap-highlight-color: transparent;
+}
+html.zbd-admin #root {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	height: 100%;
+	width: 100%;
+}
+/* 로그인 화면은 CssBaseline 이 없다 — 상자 크기·글자색이 브라우저 기본(React login layout) */
+html.zbd-admin.zbd-admin-bare,
+html.zbd-admin.zbd-admin-bare body {
+	display: block;
+}
+html.zbd-admin.zbd-admin-bare body {
+	display: flex;
+	flex-direction: row;
+	min-height: 100vh;
+	color: #000;
+	background-color: transparent;
+}
+html.zbd-admin.zbd-admin-bare #root {
+	display: block;
+	height: auto;
+}
+:where(html.zbd-admin.zbd-admin-bare *) {
+	box-sizing: content-box;
+}
+
+/* 머티리얼 심볼(관리자 기본 아이콘 — MUI Icon baseClassName) */
+:where(html.zbd-admin) .material-symbols-outlined {
+	font-family: 'Material Symbols Outlined';
+	font-weight: normal;
+	font-style: normal;
+	font-size: 24px;
+	line-height: 1;
+	letter-spacing: normal;
+	text-transform: none;
+	display: inline-block;
+	white-space: nowrap;
+	word-wrap: normal;
+	direction: ltr;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+	font-feature-settings: 'liga';
+	user-select: none;
+	width: 1em;
+	height: 1em;
+	overflow: hidden;
+	flex-shrink: 0;
+}
+:where(html.zbd-admin .material-symbols-outlined).MuiIcon-root {
+	font-size: 1.5rem;
+	text-align: center;
+}
+:where(html.zbd-admin) .MuiIcon-fontSizeSmall {
+	font-size: 1.25rem;
+}
+:where(html.zbd-admin) .MuiIcon-colorPrimary {
+	color: var(--theme-color-main);
+}
+:where(html.zbd-admin) .MuiIcon-colorAction {
+	color: var(--adm-action);
+}
+:where(html.zbd-admin) .MuiIcon-colorError {
+	color: var(--adm-error-main);
+}
+:where(html.zbd-admin) .MuiSvgIcon-fontSizeSmall {
+	font-size: 1.25rem;
+}
+:where(html.zbd-admin) .MuiSvgIcon-fontSizeLarge {
+	font-size: 2.1875rem;
+}
+:where(html.zbd-admin) .MuiSvgIcon-fontSizeInherit {
+	font-size: inherit;
+}
+
+/* 글자 — subtitle1 만 관리자 값(15 / 700) */
+:where(html.zbd-admin) .MuiTypography-subtitle1 {
+	font-size: 15px;
+	font-weight: 700;
+}
+:where(html.zbd-admin) .MuiTypography-noWrap {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+:where(html.zbd-admin) .MuiFormControlLabel-label.MuiTypography-root {
+	font-size: 14px;
+}
+
+/* 링크 — theme MuiLink(14 · 600 · 대표색, 올리면 진하게) */
+:where(html.zbd-admin) .MuiLink-root {
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1.5;
+	cursor: pointer;
+	color: var(--theme-color-main);
+}
+:where(html.zbd-admin) .MuiLink-root:hover {
+	color: var(--theme-color-dark);
+}
+:where(html.zbd-admin) .MuiLink-underlineHover {
+	text-decoration: none;
+}
+:where(html.zbd-admin) .MuiLink-underlineHover:hover {
+	text-decoration: underline;
+}
+
+/* 종이·카드 */
+:where(html.zbd-admin) .MuiPaper-root {
+	background-color: var(--adm-card);
+	background-image: none;
+	color: var(--adm-text);
+}
+:where(html.zbd-admin) .MuiCard-root {
+	background-color: var(--adm-card);
+	border-radius: 12px;
+	overflow: hidden;
+}
+:where(html.zbd-admin) .MuiCard-root:has(> .MuiTable-root),
+:where(html.zbd-admin) .MuiCard-root:has(> * > .MuiTable-root),
+:where(html.zbd-admin) .MuiCard-root:has(> * > * > .MuiTable-root) {
+	overflow-x: auto;
+}
+:where(html.zbd-admin) .MuiCard-root.MuiPaper-elevation1 {
+	box-shadow:
+		0px 5px 22px rgba(0, 0, 0, 0.04),
+		0px 0px 0px 0.5px rgba(0, 0, 0, 0.03);
+}
+:where(html.zbd-admin) .MuiCard-root:hover {
+	box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.15);
+}
+:where(html.zbd-admin) .MuiPaper-elevation12 {
+	box-shadow: 0px 3px 18px rgba(0, 0, 0, 0.08);
+}
+:where(html.zbd-admin[data-mode='dark']) .MuiCard-root.MuiPaper-elevation1 {
+	box-shadow:
+		0px 5px 22px rgba(0, 0, 0, 0.3),
+		0px 0px 0px 0.5px rgba(255, 255, 255, 0.1);
+}
+
+/* 휴대폰(<900) — 화면 본문의 맨 바깥 카드는 카드 없이 화면 폭 끝까지(받은편지함처럼, 2026-10-05 대표).
+   페이지 틀(.page-default) 좌우 여백 16 만큼 밖으로 · 모서리·그림자 없이 위아래 선만. 카드 안 카드·칸반 카드·직접 처리하는 화면(adm-nobleed)은 그대로. */
+@media (max-width: 899.95px) {
+	html.zbd-admin .page-default .MuiCard-root:not(.MuiCard-root .MuiCard-root):not(.adm-cv-kcard):not(.adm-nobleed):not(.adm-nobleed .MuiCard-root) {
+		width: auto !important;
+		max-width: none !important;
+		align-self: stretch !important;
+		margin-left: -16px !important;
+		margin-right: -16px !important;
+		border-radius: 0 !important;
+		box-shadow: none !important;
+		border-top: 1px solid var(--adm-divider);
+		border-bottom: 1px solid var(--adm-divider);
+	}
+}
+
+/* 휴대폰 — 표 칸의 한글이 한 자씩 꺾이지 않게(낱말 단위로 줄바꿈 — 넘치면 표를 감싼 칸이 옆으로 밀린다) */
+@media (max-width: 899.95px) {
+	html.zbd-admin .page-default .MuiTableCell-root {
+		word-break: keep-all; /* overflow-wrap:anywhere 는 칸 최소 폭을 한 글자로 만들어 오히려 한 자씩 꺾였다 */
+	}
+}
+
+/* 휴대폰 — 웹하드 마크다운 미리보기: 화면 폭 끝까지 · 인용·목록 들여쓰기 줄임 · 표는 옆으로 밀어 보기(글자가 한 자씩 꺾이지 않게) */
+@media (max-width: 899.95px) {
+	html.zbd-admin .page-default .MuiPaper-root:has(> .md-preview-wrap) {
+		margin-left: -16px;
+		margin-right: -16px;
+		border-left: 0 !important;
+		border-right: 0 !important;
+		box-shadow: none !important;
+	}
+	html.zbd-admin .md-preview-wrap blockquote {
+		margin: 0 0 12px;
+		padding-left: 12px;
+		border-left: 3px solid var(--adm-divider);
+	}
+	html.zbd-admin .md-preview-wrap ul,
+	html.zbd-admin .md-preview-wrap ol {
+		padding-left: 22px;
+	}
+	html.zbd-admin .md-preview-wrap table {
+		display: block;
+		width: max-content !important;
+		max-width: 100%;
+		overflow-x: auto;
+	}
+	html.zbd-admin .md-preview-wrap th,
+	html.zbd-admin .md-preview-wrap td {
+		word-break: keep-all;
+		min-width: 64px;
+		max-width: 70vw;
+	}
+}
+
+/* 서랍 — 오른쪽 서랍 폭 일괄(900 미만 꽉, 이상 최소 min(560px, 100vw)) */
+:where(html.zbd-admin) .MuiDrawer-paper {
+	background-color: var(--adm-paper);
+	border-color: var(--adm-divider);
+}
+@media (max-width: 899.95px) {
+	html.zbd-admin .MuiDrawer-anchorRight > .MuiDrawer-paper {
+		width: 100% !important;
+		max-width: 100% !important;
+		min-width: 0 !important;
+	}
+}
+@media (min-width: 900px) {
+	html.zbd-admin .MuiDrawer-anchorRight > .MuiDrawer-paper {
+		min-width: min(560px, 100vw);
+	}
+}
+
+/* 아바타 */
+:where(html.zbd-admin) .MuiAvatar-root {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	width: 40px;
+	height: 40px;
+	font-family: var(--mui-font);
+	font-size: 14px;
+	font-weight: 600;
+	line-height: 1;
+	letter-spacing: 0;
+	border-radius: 50%;
+	overflow: hidden;
+	user-select: none;
+}
+:where(html.zbd-admin) .MuiAvatar-colorDefault {
+	color: var(--adm-bg);
+	background-color: #bdbdbd;
+}
+:where(html.zbd-admin[data-mode='dark']) .MuiAvatar-colorDefault {
+	background-color: #757575;
+}
+:where(html.zbd-admin) .MuiAvatar-img {
+	width: 100%;
+	height: 100%;
+	text-align: center;
+	object-fit: cover;
+	color: transparent;
+	text-indent: 10000px;
+}
+
+/* 버튼 — MUI 9 기본 크기 + theme(모서리 4, 대문자 없음, 굵기 600) */
+:where(html.zbd-admin) .MuiButton-root {
+	font-family: var(--mui-font);
+	font-weight: 600;
+	font-size: 0.875rem;
+	line-height: 1.75;
+	padding: 6px 16px;
+	min-width: 64px;
+	border-radius: 4px;
+	text-transform: none;
+}
+:where(html.zbd-admin) .MuiButton-text {
+	padding: 6px 8px;
+}
+:where(html.zbd-admin) .MuiButton-outlined {
+	padding: 5px 15px;
+}
+:where(html.zbd-admin) .MuiButton-sizeSmall {
+	font-size: 0.8125rem;
+}
+:where(html.zbd-admin) .MuiButton-textSizeSmall {
+	padding: 4px 5px;
+}
+:where(html.zbd-admin) .MuiButton-textSizeLarge {
+	padding: 8px 11px;
+	font-size: 0.9375rem;
+}
+:where(html.zbd-admin) .MuiButton-outlinedSizeSmall {
+	padding: 3px 9px;
+}
+:where(html.zbd-admin) .MuiButton-containedSizeSmall {
+	padding: 4px 10px;
+}
+:where(html.zbd-admin) .MuiButton-containedSizeLarge {
+	padding: 8px 22px;
+	font-size: 0.9375rem;
+}
+:where(html.zbd-admin) .MuiButton-fullWidth {
+	width: 100%;
+}
+:where(html.zbd-admin) .MuiButton-contained {
+	box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.08);
+}
+:where(html.zbd-admin) .MuiButton-contained:hover {
+	box-shadow: 0px 1px 10px rgba(0, 0, 0, 0.08);
+}
+:where(html.zbd-admin) .MuiButton-root:hover :hover {
+	color: var(--theme-color-dark);
+}
+:where(html.zbd-admin) .MuiButton-containedInherit {
+	color: rgba(0, 0, 0, 0.87);
+	background-color: #e0e0e0;
+}
+:where(html.zbd-admin) .MuiButton-containedInherit:hover {
+	background-color: #f5f5f5;
+	color: rgba(0, 0, 0, 0.87);
+}
+:where(html.zbd-admin) .MuiButton-textInherit,
+:where(html.zbd-admin) .MuiButton-outlinedInherit {
+	color: inherit;
+	border-color: currentColor;
+}
+:where(html.zbd-admin) .MuiButton-textError {
+	color: var(--adm-error-main);
+}
+:where(html.zbd-admin) .MuiButton-containedError {
+	color: #fff;
+	background-color: var(--adm-error-main);
+}
+:where(html.zbd-admin) .MuiButton-containedWarning {
+	color: #fff;
+	background-color: var(--adm-warning-main);
+}
+:where(html.zbd-admin) .MuiButton-containedSuccess {
+	color: #fff;
+	background-color: var(--adm-success-main);
+}
+:where(html.zbd-admin) .MuiButton-outlinedError {
+	color: var(--adm-error-main);
+	border-color: var(--adm-error-alpha50);
+}
+:where(html.zbd-admin) .MuiButton-root.Mui-disabled {
+	color: var(--adm-text-disabled);
+	pointer-events: none;
+	cursor: default;
+}
+:where(html.zbd-admin) .MuiButton-contained.Mui-disabled {
+	background-color: var(--adm-disabled-bg);
+	box-shadow: none;
+}
+:where(html.zbd-admin) .MuiButton-outlined.Mui-disabled {
+	border-color: var(--adm-disabled-bg);
+}
+:where(html.zbd-admin) .MuiIconButton-root.Mui-disabled {
+	color: var(--adm-text-disabled);
+	pointer-events: none;
+}
+:where(html.zbd-admin) .MuiIconButton-sizeLarge {
+	padding: 12px;
+	font-size: 1.75rem;
+}
+:where(html.zbd-admin) .MuiIconButton-colorPrimary {
+	color: var(--theme-color-main);
+}
+
+/* 입력칸 — outlined(theme MuiOutlinedInput) */
+:where(html.zbd-admin) .MuiOutlinedInput-root {
+	border-radius: 8px;
+}
+:where(html.zbd-admin) .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+	border-color: var(--adm-n200);
+}
+:where(html.zbd-admin) .MuiOutlinedInput-notchedOutline {
+	border-color: var(--adm-n200);
+}
+:where(html.zbd-admin) .MuiOutlinedInput-root.Mui-disabled {
+	background-color: var(--adm-hover);
+}
+:where(html.zbd-admin) .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline {
+	border-color: var(--adm-error-main);
+}
+:where(html.zbd-admin) .MuiInputBase-input::placeholder {
+	color: var(--gt-700, #909090);
+	opacity: 1;
+}
+:where(html.zbd-admin) .MuiInputBase-root {
+	font-family: var(--mui-font);
+	color: var(--adm-text);
+}
+/* filled(관리자 TextField 기본) — theme MuiFilledInput: 테두리 1px · 모서리 8 · 바탕 없음 */
+:where(html.zbd-admin) .MuiFilledInput-root {
+	position: relative;
+	background-color: transparent;
+	border-radius: 8px;
+	border: 1px solid var(--adm-n200);
+	overflow: hidden;
+	transition:
+		border-color 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+		box-shadow 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+:where(html.zbd-admin) .MuiFilledInput-root:hover {
+	background-color: var(--adm-hover);
+}
+:where(html.zbd-admin) .MuiFilledInput-root.Mui-focused {
+	background-color: transparent;
+	border-color: var(--theme-color-main);
+}
+:where(html.zbd-admin) .MuiFilledInput-root.Mui-error {
+	border-color: var(--adm-error-main);
+	box-shadow: var(--adm-error-main) 0 0 0 1px;
+}
+:where(html.zbd-admin) .MuiFilledInput-root.Mui-disabled {
+	background-color: transparent;
+}
+:where(html.zbd-admin) .MuiFilledInput-input {
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 24px;
+	padding: 25px 12px 8px;
+	height: 1.4375em;
+	box-sizing: content-box;
+}
+:where(html.zbd-admin .MuiInputBase-sizeSmall) .MuiFilledInput-input {
+	padding: 21px 12px 4px;
+}
+:where(html.zbd-admin .MuiInputBase-hiddenLabel) .MuiFilledInput-input {
+	padding-top: 16px;
+	padding-bottom: 17px;
+}
+:where(html.zbd-admin .MuiInputBase-hiddenLabel.MuiInputBase-sizeSmall) .MuiFilledInput-input {
+	padding-top: 8px;
+	padding-bottom: 9px;
+}
+:where(html.zbd-admin) .MuiFilledInput-root.MuiInputBase-multiline {
+	padding: 25px 12px 8px;
+}
+:where(html.zbd-admin) .MuiFilledInput-root.MuiInputBase-multiline.MuiInputBase-hiddenLabel {
+	padding-top: 16px;
+	padding-bottom: 17px;
+}
+:where(html.zbd-admin) .MuiFilledInput-root.MuiInputBase-multiline.MuiInputBase-sizeSmall {
+	padding-top: 21px;
+	padding-bottom: 4px;
+}
+:where(html.zbd-admin .MuiFilledInput-root.MuiInputBase-multiline) .MuiFilledInput-input {
+	padding: 0;
+	height: auto;
+	resize: none;
+}
+:where(html.zbd-admin) .MuiFilledInput-root.MuiInputBase-adornedEnd {
+	padding-right: 12px;
+}
+:where(html.zbd-admin) .MuiFilledInput-root.MuiInputBase-adornedStart {
+	padding-left: 12px;
+}
+:where(html.zbd-admin) .MuiInputAdornment-root {
+	display: flex;
+	height: 0.01em;
+	max-height: 2em;
+	align-items: center;
+	white-space: nowrap;
+	color: var(--adm-action);
+}
+:where(html.zbd-admin) .MuiInputAdornment-positionEnd {
+	margin-left: 8px;
+}
+:where(html.zbd-admin) .MuiInputAdornment-positionStart {
+	margin-right: 8px;
+}
+/* 라벨(늘 위에 붙음 — TextField slotProps.inputLabel.shrink) */
+:where(html.zbd-admin) .MuiInputLabel-root {
+	position: absolute;
+	left: 0;
+	top: 0;
+	z-index: 1;
+	transform-origin: top left;
+	pointer-events: none;
+	max-width: calc(133% - 32px);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	font-family: var(--mui-font);
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1.4375em;
+	color: var(--adm-text2);
+	transition:
+		color 200ms cubic-bezier(0, 0, 0.2, 1) 0ms,
+		transform 200ms cubic-bezier(0, 0, 0.2, 1) 0ms;
+}
+:where(html.zbd-admin) .MuiInputLabel-filled.MuiInputLabel-shrink {
+	transform: translate(12px, 6px) scale(0.85);
+}
+:where(html.zbd-admin) .MuiInputLabel-outlined.MuiInputLabel-shrink {
+	transform: translate(14px, -9px) scale(0.85);
+}
+:where(html.zbd-admin) .MuiInputLabel-root.Mui-focused {
+	color: var(--theme-color-main);
+}
+:where(html.zbd-admin) .MuiInputLabel-root.Mui-error {
+	color: var(--adm-error-main);
+}
+:where(html.zbd-admin) .MuiFormHelperText-root {
+	font-family: var(--mui-font);
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1.66;
+	margin: 3px 12px 0;
+	color: var(--adm-text2);
+}
+:where(html.zbd-admin) .MuiFormHelperText-root.Mui-error {
+	color: var(--adm-error-main);
+}
+:where(html.zbd-admin) .MuiFormControlLabel-root {
+	display: inline-flex;
+	align-items: center;
+	cursor: pointer;
+	vertical-align: middle;
+	margin-left: -11px;
+	margin-right: 16px;
+	width: fit-content;
+}
+
+/* 체크박스·라디오(기본 medium) */
+:where(html.zbd-admin) .MuiCheckbox-root,
+:where(html.zbd-admin) .MuiRadio-root {
+	padding: 9px;
+	border-radius: 50%;
+	color: var(--adm-action);
+}
+:where(html.zbd-admin) .MuiCheckbox-root.Mui-checked,
+:where(html.zbd-admin) .MuiCheckbox-indeterminate,
+:where(html.zbd-admin) .MuiRadio-root.Mui-checked {
+	color: var(--theme-color-main);
+}
+:where(html.zbd-admin) .MuiCheckbox-root.Mui-disabled {
+	color: var(--adm-text-disabled);
+}
+:where(html.zbd-admin) .PrivateSwitchBase-input {
+	cursor: inherit;
+	position: absolute;
+	opacity: 0;
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+	margin: 0;
+	padding: 0;
+	z-index: 1;
+}
+
+/* 표 — theme MuiTable·MuiTableCell·MuiTableHead */
+:where(html.zbd-admin) .MuiTable-root td {
+	padding: 4px 16px;
+}
+:where(html.zbd-admin) .MuiTableCell-root {
+	border-bottom: 1px solid var(--adm-cell-line);
+	padding: 8px 16px;
+	font-family: var(--mui-font);
+	font-size: 0.875rem;
+	line-height: 1.43;
+	color: var(--adm-text);
+}
+:where(html.zbd-admin) .MuiTableHead-root .MuiTableCell-root {
+	border-bottom: none;
+	background-color: var(--adm-n50);
+	color: var(--adm-n700);
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+}
+:where(html.zbd-admin) .MuiTableHead-root .MuiTableCell-paddingCheckbox {
+	padding-top: 4px;
+	padding-bottom: 4px;
+}
+:where(html.zbd-admin) .MuiTableCell-paddingCheckbox {
+	width: 48px;
+	padding: 0 0 0 4px;
+}
+:where(html.zbd-admin) .MuiTableRow-hover:hover {
+	background-color: var(--adm-hover);
+}
+:where(html.zbd-admin) .MuiTableRow-root.Mui-selected {
+	background-color: var(--theme-color-alpha8);
+}
+:where(html.zbd-admin) .MuiTableSortLabel-root {
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	flex-direction: inherit;
+	user-select: none;
+}
+:where(html.zbd-admin) .MuiTableSortLabel-icon {
+	font-size: 18px;
+	margin: 0 4px;
+	opacity: 0;
+	transition:
+		opacity 200ms,
+		transform 200ms;
+}
+:where(html.zbd-admin) .MuiTableSortLabel-root:hover .MuiTableSortLabel-icon {
+	opacity: 0.5;
+}
+:where(html.zbd-admin) .MuiTableSortLabel-root.Mui-active .MuiTableSortLabel-icon {
+	opacity: 1;
+}
+:where(html.zbd-admin) .MuiTableSortLabel-iconDirectionAsc {
+	transform: rotate(180deg);
+}
+@media (max-width: 599.95px) {
+	html.zbd-admin main .MuiTableCell-root {
+		word-break: keep-all;
+		padding-left: 8px;
+		padding-right: 8px;
+	}
+	html.zbd-admin main .MuiTableCell-head {
+		white-space: nowrap;
+	}
+}
+
+/* 탭 — theme MuiTab(14 · 500 · 여백 0 16) */
+:where(html.zbd-admin) .MuiTabs-root {
+	display: flex;
+	overflow: hidden;
+	min-height: 48px;
+}
+:where(html.zbd-admin) .MuiTabs-scroller {
+	position: relative;
+	display: inline-block;
+	flex: 1 1 auto;
+	white-space: nowrap;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+:where(html.zbd-admin) .MuiTabs-scroller::-webkit-scrollbar {
+	display: none;
+}
+:where(html.zbd-admin) .MuiTabs-flexContainer {
+	display: flex;
+}
+:where(html.zbd-admin) .MuiTabs-indicator {
+	position: absolute;
+	height: 2px;
+	bottom: 0;
+	background-color: var(--theme-color-main);
+	transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+:where(html.zbd-admin) .MuiTab-root {
+	font-family: var(--mui-font);
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1.71;
+	min-width: auto;
+	max-width: 360px;
+	min-height: 48px;
+	padding: 0 16px;
+	text-transform: none;
+	flex-shrink: 0;
+	position: relative;
+	overflow: hidden;
+	white-space: normal;
+	text-align: center;
+	flex-direction: column;
+	color: var(--adm-text2);
+}
+:where(html.zbd-admin) .MuiTab-root.Mui-selected {
+	color: var(--theme-color-main);
+}
+
+/* 목록(List) — ListItemButton · ListItemIcon · ListItemText */
+:where(html.zbd-admin) .MuiListItemButton-root {
+	display: flex;
+	flex-grow: 1;
+	justify-content: flex-start;
+	align-items: center;
+	position: relative;
+	text-decoration: none;
+	min-width: 0;
+	box-sizing: border-box;
+	text-align: left;
+	padding: 8px 16px;
+	transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+	cursor: pointer;
+	color: inherit;
+}
+:where(html.zbd-admin) .MuiListItemButton-root:hover {
+	background-color: var(--adm-hover);
+}
+:where(html.zbd-admin) .MuiListItemIcon-root {
+	min-width: 36px;
+	color: var(--adm-action);
+	flex-shrink: 0;
+	display: inline-flex;
+}
+:where(html.zbd-admin) .MuiListItemText-root {
+	flex: 1 1 auto;
+	min-width: 0;
+	margin: 4px 0;
+}
+:where(html.zbd-admin) .MuiList-padding {
+	padding-top: 8px;
+	padding-bottom: 8px;
+}
+
+/* 배지(Badge) */
+:where(html.zbd-admin) .MuiBadge-root {
+	position: relative;
+	display: inline-flex;
+	vertical-align: middle;
+	flex-shrink: 0;
+}
+:where(html.zbd-admin) .MuiBadge-badge {
+	display: flex;
+	flex-flow: row wrap;
+	justify-content: center;
+	align-content: center;
+	align-items: center;
+	position: absolute;
+	box-sizing: border-box;
+	font-family: var(--mui-font);
+	font-weight: 500;
+	font-size: 0.75rem;
+	min-width: 20px;
+	line-height: 1;
+	padding: 0 6px;
+	height: 20px;
+	border-radius: 10px;
+	z-index: 1;
+	top: 0;
+	right: 0;
+	transform: scale(1) translate(50%, -50%);
+	transform-origin: 100% 0%;
+}
+:where(html.zbd-admin) .MuiBadge-colorPrimary {
+	background-color: var(--theme-color-main);
+	color: var(--theme-color-contrastText);
+}
+:where(html.zbd-admin) .MuiBadge-colorError {
+	background-color: var(--adm-error-main);
+	color: #fff;
+}
+:where(html.zbd-admin) .MuiBadge-invisible {
+	transform: scale(0) translate(50%, -50%);
+}
+
+/* 알림(Alert filled — 토스트) */
+:where(html.zbd-admin) .MuiAlert-root {
+	font-family: var(--mui-font);
+	font-size: 14px;
+	font-weight: 400;
+	line-height: 1.5;
+	border-radius: 8px;
+	display: flex;
+	padding: 6px 16px;
+}
+:where(html.zbd-admin) .MuiAlert-icon {
+	margin-right: 12px;
+	padding: 7px 0;
+	display: flex;
+	font-size: 22px;
+	opacity: 0.9;
+}
+:where(html.zbd-admin) .MuiAlert-message {
+	padding: 8px 0;
+	min-width: 0;
+	overflow: auto;
+}
+:where(html.zbd-admin) .MuiAlert-filled {
+	color: #fff;
+	font-weight: 500;
+}
+:where(html.zbd-admin) .MuiAlert-filledSuccess {
+	background-color: var(--adm-success-main);
+}
+:where(html.zbd-admin) .MuiAlert-filledError {
+	background-color: var(--adm-error-main);
+}
+:where(html.zbd-admin) .MuiAlert-filledWarning {
+	background-color: var(--adm-warning-main);
+}
+:where(html.zbd-admin) .MuiAlert-filledInfo {
+	background-color: var(--adm-info-main);
+}
+:where(html.zbd-admin) .MuiAlert-standardInfo {
+	background-color: rgb(229, 246, 253);
+	color: rgb(1, 67, 97);
+}
+
+/* 말풍선(Tooltip) */
+:where(html.zbd-admin) .MuiTooltip-tooltip {
+	background-color: rgba(97, 97, 97, 0.92);
+	border-radius: 4px;
+	color: #fff;
+	font-family: var(--mui-font);
+	padding: 4px 8px;
+	font-size: 0.6875rem;
+	max-width: 300px;
+	margin: 2px;
+	word-wrap: break-word;
+	font-weight: 500;
+	line-height: 1.4;
+}
+
+/* 원형 로딩(CircularProgress) */
+:where(html.zbd-admin) .MuiCircularProgress-root {
+	display: inline-block;
+	color: var(--theme-color-main);
+	width: 40px;
+	height: 40px;
+	animation: zbd-adm-rotate 1.4s linear infinite;
+}
+:where(html.zbd-admin) .MuiCircularProgress-circle {
+	stroke: currentColor;
+	stroke-dasharray: 80px, 200px;
+	stroke-dashoffset: 0;
+	animation: zbd-adm-dash 1.4s ease-in-out infinite;
+}
+@keyframes zbd-adm-rotate {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
+}
+@keyframes zbd-adm-dash {
+	0% {
+		stroke-dasharray: 1px, 200px;
+		stroke-dashoffset: 0;
+	}
+	50% {
+		stroke-dasharray: 100px, 200px;
+		stroke-dashoffset: -15px;
+	}
+	100% {
+		stroke-dasharray: 1px, 200px;
+		stroke-dashoffset: -126px;
+	}
+}
+
+/* 구분선 */
+:where(html.zbd-admin) .MuiDivider-root {
+	border-color: var(--adm-divider);
+}
+
+/* 스크롤 막대(CssBaseline) */
+html.zbd-admin body::-webkit-scrollbar,
+html.zbd-admin body *::-webkit-scrollbar {
+	background-color: #f1f1f1;
+	width: 8px;
+	height: 8px;
+}
+html.zbd-admin body::-webkit-scrollbar-thumb,
+html.zbd-admin body *::-webkit-scrollbar-thumb {
+	border-radius: 8px;
+	background-color: #c1c1c1;
+	min-height: 24px;
+}
+:where(html.zbd-admin[data-mode='dark']) body::-webkit-scrollbar,
+:where(html.zbd-admin[data-mode='dark']) body *::-webkit-scrollbar {
+	background-color: #2b2b2b;
+}
+:where(html.zbd-admin[data-mode='dark']) body::-webkit-scrollbar-thumb,
+:where(html.zbd-admin[data-mode='dark']) body *::-webkit-scrollbar-thumb {
+	background-color: #6b6b6b;
+}
+
+/* App.css 의 관리자 전용 몇 가지 */
+:where(html.zbd-admin) .banselect {
+	user-select: none;
+}
+:where(html.zbd-admin) .MuiStack-root:focus-visible,
+:where(html.zbd-admin) .MuiBox-root:focus-visible {
+	outline: none !important;
+}

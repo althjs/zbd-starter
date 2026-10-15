@@ -1,0 +1,76 @@
+/**
+ * 디자인 토큰 — 색·그림자·모서리·글자. 관리자·사용자 화면이 같이 쓴다.
+ *
+ * 값은 React 판(MUI 기본 테마 + fe-service 테마) 이 실제로 그리던 값을 **재서** 옮겼다(2026-10-03, 운영 /mini 계산값).
+ * 화면마다 숫자를 새로 적지 말고 여기 이름을 쓴다. 회사·사이트별로 바꿀 값(대표색 등) 은 이 변수를 덮어쓴다.
+ *
+ * 크기 구간(미디어 쿼리는 변수를 못 쓴다 — 숫자를 그대로 쓴다):
+ *   sm  = max-width: 599.95px   (휴대폰)
+ *   md  = max-width: 899.95px   (태블릿 이하)
+ */
+:root {
+	/* 글꼴 */
+	--zbd-font: 'Pretendard Variable', 'Noto Color Emoji', sans-serif;
+	/* 부품 글꼴 — 예전 MUI 부품(글자·버튼·팝업) 이 쓰던 값. 웹폰트를 받지 않아 맥에선 Helvetica, 한글은 시스템 글꼴 */
+	--zbd-font-ui: Roboto, Helvetica, Arial, sans-serif;
+	--zbd-ls-body: 0.00938em; /* 글자 요소(p) 의 간격 (MUI body1) — body·div 는 normal */
+	--zbd-ls-button: 0.02857em; /* 버튼 글자 간격 */
+	--zbd-lh-body: 1.5;
+
+	/* 대표색 — 버튼·링크 */
+	--zbd-primary: #1976d2;
+	--zbd-primary-hover: #1565c0;
+	--zbd-primary-soft: rgba(25, 118, 210, 0.04);
+	--zbd-primary-border: rgba(25, 118, 210, 0.5);
+	--zbd-on-primary: #fff;
+
+	/* 글자색 */
+	--zbd-text: #000;
+	--zbd-text-strong: #101828;
+	--zbd-text-body: rgba(0, 0, 0, 0.87);
+	--zbd-text-sub: #475467;
+	--zbd-text-muted: #667085;
+	--zbd-text-faint: #98a2b3;
+	--zbd-text-footer: #575757;
+	--zbd-text-meta: #606060;
+	--zbd-icon-muted: rgba(0, 0, 0, 0.54);
+
+	/* 바탕·선 */
+	--zbd-paper: #fff;
+	--zbd-line: #eaecf0;
+	--zbd-line-soft: #f2f4f7;
+	--zbd-line-dashed: #d0d5dd;
+	--zbd-input-border: rgba(0, 0, 0, 0.23);
+	--zbd-hover: rgba(0, 0, 0, 0.04);
+	--zbd-disabled-bg: rgba(0, 0, 0, 0.12);
+	--zbd-disabled-text: rgba(0, 0, 0, 0.26);
+	--zbd-backdrop: rgba(0, 0, 0, 0.5);
+	--zbd-highlight: #fff3c4;
+
+	/* 브랜드(즈비드 청록) */
+	--zbd-brand: #215953;
+	--zbd-brand-text: #1f7a6d;
+	--zbd-brand-soft: #f5f8f7;
+
+	/* 그림자 */
+	--zbd-shadow-1: rgba(0, 0, 0, 0.2) 0px 2px 1px -1px, rgba(0, 0, 0, 0.14) 0px 1px 1px 0px, rgba(0, 0, 0, 0.12) 0px 1px 3px 0px;
+	--zbd-shadow-2: rgba(0, 0, 0, 0.2) 0px 3px 1px -2px, rgba(0, 0, 0, 0.14) 0px 2px 2px 0px, rgba(0, 0, 0, 0.12) 0px 1px 5px 0px;
+	--zbd-shadow-soft: 0 1px 3px rgba(16, 24, 40, 0.08);
+	--zbd-shadow-dialog: 0 11px 15px -7px rgba(0, 0, 0, 0.2), 0 24px 38px 3px rgba(0, 0, 0, 0.14), 0 9px 46px 8px rgba(0, 0, 0, 0.12);
+
+	/* 모서리 */
+	--zbd-radius-sm: 4px;
+
+	/* 사용자 화면 카드(2026-10-04 대표 — /app/life 소개 카드 .zlf-card 모양) */
+	--zbd-card-radius: 18px;
+	--zbd-card-line: #e3ece9;
+	--zbd-card-shadow: 0 2px 10px rgba(29, 67, 61, 0.05);
+	--zbd-radius-md: 8px;
+	--zbd-radius-lg: 12px;
+	--zbd-radius-pill: 20px;
+
+	/* 층 */
+	--zbd-z-shorts: 1000;
+	--zbd-z-modal: 1300;
+	--zbd-z-toast: 1400;
+}

@@ -1,0 +1,19 @@
+# 개발 모드(Windows) — run_dev.ps1 이 쓴다. 맥·리눅스는 .air.toml
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "go build -buildvcs=false -o ./tmp/server.exe ./cmd/server"
+  entrypoint = ["./tmp/server.exe"]
+  include_ext = ["go"]
+  exclude_dir = ["tmp", "bin", "vendor"]
+  delay = 300
+  kill_delay = "1s"
+  send_interrupt = false
+  stop_on_error = true
+
+[log]
+  time = true
+
+[misc]
+  clean_on_exit = true

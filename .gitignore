@@ -1,0 +1,15 @@
+# 개발 중 만들어지는 것 — 비밀값(.env.local·.dev/account.txt) 포함, 절대 올리지 않는다
+.dev/
+.env
+.env.*
+!.env.example
+node_modules/
+.DS_Store
+# zbd 플러그인 — 다시 붙일 때 남기는 백업(.zbd/backup) · .zbd-plugins.json(붙인 파일 지문)은 커밋한다
+.zbd/
+# 운영 배포 대상(서버·도메인) — 사람마다 다르다
+deploy/deploy.conf
+
+# 패치 실패·병합 흔적 — 저장소에 넣지 않는다
+*.rej
+*.orig
