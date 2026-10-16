@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -54,6 +55,10 @@ func main() {
 					http.NotFound(w, req)
 					return
 				}
+				if f := siteAssetFallback(dir, req.URL.Path); f != "" { // 붙인 플러그인의 사이트 그림(앱 아이콘 등)이 아직 업로드 폴더에 없으면 저장소 원본에서
+					http.ServeFile(w, req, f)
+					return
+				}
 				files.ServeHTTP(w, req)
 				return
 			}
@@ -80,4 +85,26 @@ func logRequests(h http.Handler) http.Handler {
 		h.ServeHTTP(w, r)
 		log.Printf("%s %s (%dms)", r.Method, r.URL.Path, time.Since(t0).Milliseconds())
 	})
+}
+
+// siteAssetFallback — /upload/{호스팅}/site/{이름} 이 업로드 폴더에 없고 저장소 db/assets/site 에 있으면 그 경로.
+// run_dev 는 시작할 때만 db/assets/site 를 업로드 폴더로 복사한다 — 실행 중에 zbd add 로 붙인 플러그인 그림도 바로 보이게(개발 모드 전용 길, 운영은 nginx).
+func siteAssetFallback(uploadDir, urlPath string) string {
+	parts := strings.Split(strings.TrimPrefix(urlPath, "/upload/"), "/")
+	if len(parts) != 3 || parts[1] != "site" || parts[2] == "" || strings.HasPrefix(parts[2], ".") || strings.ContainsAny(parts[0]+parts[2], "\\") {
+		return ""
+	}
+	if _, err := os.Stat(filepath.Join(uploadDir, parts[0], "site", parts[2])); err == nil {
+		return ""
+	}
+	// 저장소 맨 위(db/ 가 있는 곳)는 실행 폴더에서 위로 찾는다 — run_dev 는 zbd-be-golang 에서 띄운다
+	d, _ := os.Getwd()
+	for i := 0; i < 4 && d != ""; i++ {
+		f := filepath.Join(d, "db", "assets", "site", parts[2])
+		if st, err := os.Stat(f); err == nil && st.Mode().IsRegular() {
+			return f
+		}
+		d = filepath.Dir(d)
+	}
+	return ""
 }
