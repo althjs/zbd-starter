@@ -57,6 +57,26 @@ async function upstreamDoc(path: string, ua: string): Promise<Doc> {
 	}
 }
 
+/**
+ * 외부 접속 주소(zbd tunnel)의 앱 주소 — 2026-10-16 대표 「모두 웹앱 설치 가능하게」.
+ * 터널은 admin.·chat.·mail.·office.·photo.{사이트 주소} 도 이 개발 서버로 넘기고, 방문자가 연 주소(x-zbd-public-host)와
+ * 사이트 주소(x-zbd-tunnel-base — 앱 주소 인증서가 준비됐을 때만)를 붙인다. 개발 서버는 한 주소(localhost) 모드라 서버가 관리자 주소 목록을
+ * 문서에 넣지 않으니 여기서 넣는다: 관리자 주소 목록(zbd:admin-hosts → 단독 앱 알아보기) · 사이트 주소(zbd:site-base → 「사이트 보기」 링크) ·
+ * 그 주소의 설치 정보 링크(같은 출처에 설치 앱 하나). 헤더를 위조해도 바뀌는 것은 이 개발 화면의 주소 표시뿐이라 모양만 확인한다.
+ */
+const TUNNEL_BASE = /^starter-[0-9]{1,10}\.zbd\.co\.kr$/;
+const TUNNEL_APP: Record<string, string> = { admin: '', chat: 'messenger', mail: 'mail', office: 'office', photo: 'photo' };
+function tunnelHead(headers: Headers): string {
+	const base = (headers.get('x-zbd-tunnel-base') || '').toLowerCase();
+	const pub = (headers.get('x-zbd-public-host') || '').toLowerCase();
+	if (!TUNNEL_BASE.test(base)) return '';
+	const hosts = Object.keys(TUNNEL_APP).map((a) => a + '.' + base);
+	let out = `<meta name="zbd:admin-hosts" content="${hosts.join(',')}"><meta name="zbd:site-base" content="https://${base}/">`;
+	const app = pub.endsWith('.' + base) ? pub.slice(0, -base.length - 1) : '';
+	if (app in TUNNEL_APP) out += `<link rel="manifest" href="/service/pwa/manifest?admin=1&${TUNNEL_APP[app] ? 'app=' + TUNNEL_APP[app] + '&' : ''}hostingId=${HOSTING}">`;
+	return out;
+}
+
 export const handle: Handle = async ({ event, resolve }) => {
 	// /sitemap.xml · /robots.txt — 운영 nginx 처럼 BE 로(개발 서버가 화면으로 그리지 않게)
 	if (LOCAL && (event.url.pathname == '/sitemap.xml' || event.url.pathname == '/robots.txt')) {
@@ -67,7 +87,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 	const accept = event.request.headers.get('accept') || '';
 	if (event.request.method != 'GET' || accept.indexOf('text/html') == -1) return resolve(event);
 	// 관리자 화면(/admin·/login)은 사용자 사이트 머리말이 필요 없다 — 운영 zbd.kr 은 /admin 을 홈으로 넘기므로(2026-10-03) 받으러 가면 개발에서도 홈으로 튕긴다
-	if (/^\/(admin|login)(\/|$)/.test(event.url.pathname)) return resolve(event, { transformPageChunk: ({ html }) => html.replace('<!--zbd:head-->', '<title>관리자</title>') });
+	const tunnel = tunnelHead(event.request.headers);
+	if (/^\/(admin|login)(\/|$)/.test(event.url.pathname)) return resolve(event, { transformPageChunk: ({ html }) => html.replace('<!--zbd:head-->', '<title>관리자</title>' + tunnel) });
 
 	const doc = await upstreamDoc(event.url.pathname + event.url.search, event.request.headers.get('user-agent') || '');
 	if (doc.redirect) {
@@ -78,7 +99,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	return resolve(event, {
 		transformPageChunk: ({ html }) =>
 			html
-				.replace('<!--zbd:head-->', doc.head || '<title>내 사이트</title>')
+				.replace('<!--zbd:head-->', (doc.head || '<title>내 사이트</title>') + tunnel)
 				.replace('<!--zbd:data-->', doc.data)
 				.replace('<!--zbd:body-->', doc.noscript)
 	});

@@ -74,6 +74,9 @@ export const SINGLE_ORIGIN = HOST_REALM == '';
  *  (설정은 운영 도메인이라 터널·localhost 의 관리자에서 누르면 운영 사이트로 나갔다 — 2026-10-08). 관리자 → 사용자 화면 링크·미리보기 주소는 모두 이것으로 */
 export function siteBase(configured?: string | null): string {
 	const here = typeof location != 'undefined' ? location.origin + '/' : '/';
+	// 외부 접속 주소(터널)의 앱 주소(admin.starter-N…) — 개발 서버가 사이트 주소를 넣어 준다(hooks.server.ts tunnelHead)
+	const tunnel = metaContent('zbd:site-base');
+	if (tunnel) return tunnel;
 	const v = SINGLE_ORIGIN ? '' : String(configured || '').trim();
 	return v ? (v.endsWith('/') ? v : v + '/') : here;
 }
