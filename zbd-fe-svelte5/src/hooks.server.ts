@@ -8,6 +8,7 @@
  *
  * 배포(정적 빌드)에서는 이 파일이 돌지 않는다. 운영 교체 때는 BE SSR 이 이 앱의 진입 스크립트를 쓰게 바꾼다.
  */
+import { existsSync } from 'node:fs';
 import type { Handle } from '@sveltejs/kit/hooks';
 
 const UPSTREAM = process.env.ZBD_SSR || process.env.ZBD_API || 'http://127.0.0.1:5001';
@@ -70,7 +71,10 @@ function tunnelHead(headers: Headers): string {
 	const base = (headers.get('x-zbd-tunnel-base') || '').toLowerCase();
 	const pub = (headers.get('x-zbd-public-host') || '').toLowerCase();
 	if (!TUNNEL_BASE.test(base)) return '';
-	const hosts = Object.keys(TUNNEL_APP).map((a) => a + '.' + base);
+	// 단독 앱은 그 플러그인(pwa-chat 등)을 붙였을 때만 — 붙이면 앱 아이콘이 저장소 db/assets/site 에 들어온다. 안 붙인 앱까지 넣으면 「설치」 버튼이 아이콘 없이 뜬다
+	const hosts = Object.keys(TUNNEL_APP)
+		.filter((a) => !TUNNEL_APP[a] || existsSync(`../db/assets/site/192x192_${TUNNEL_APP[a]}_icon.png`))
+		.map((a) => a + '.' + base);
 	let out = `<meta name="zbd:admin-hosts" content="${hosts.join(',')}"><meta name="zbd:site-base" content="https://${base}/">`;
 	const app = pub.endsWith('.' + base) ? pub.slice(0, -base.length - 1) : '';
 	if (app in TUNNEL_APP) out += `<link rel="manifest" href="/service/pwa/manifest?admin=1&${TUNNEL_APP[app] ? 'app=' + TUNNEL_APP[app] + '&' : ''}hostingId=${HOSTING}">`;
