@@ -115,15 +115,36 @@ func ClientIPs(h http.Header) []string {
 	return out
 }
 
-// OfficeIPs — 사무실 IP(설정 OFFICE_IPS, 쉼표). 없으면 없음.
+// OfficeIPsFromSettings — 관리자 「환경 설정 › 관리자 페이지 › 사무실 IP」(SITE.officeIps). app 이 시작할 때 채운다(없으면 .env 만).
+var OfficeIPsFromSettings func() []string
+
+// OfficeIPs — 사무실 IP = 설정 OFFICE_IPS(.env, 쉼표) + 관리자 화면 설정. 코드에 박아 둔 기본값은 없다(2026-10-16).
 func OfficeIPs(conf string) []string {
-	if strings.TrimSpace(conf) == "" {
+	return MergeIPs(SplitIPs(conf), settingsOfficeIPs())
+}
+
+func settingsOfficeIPs() []string {
+	if OfficeIPsFromSettings == nil {
 		return nil
 	}
+	return OfficeIPsFromSettings()
+}
+
+// SplitIPs — 쉼표·공백·줄바꿈으로 나뉜 IP 목록
+func SplitIPs(s string) []string {
+	return strings.FieldsFunc(s, func(r rune) bool { return r == ',' || r == ' ' || r == '\n' || r == '\t' || r == '\r' })
+}
+
+// MergeIPs — 겹치지 않게 합친다(앞 순서 유지)
+func MergeIPs(lists ...[]string) []string {
 	var out []string
-	for _, s := range strings.Split(conf, ",") {
-		if s = strings.TrimSpace(s); s != "" {
-			out = append(out, s)
+	seen := map[string]bool{}
+	for _, l := range lists {
+		for _, s := range l {
+			if s = strings.TrimSpace(s); s != "" && !seen[s] {
+				seen[s] = true
+				out = append(out, s)
+			}
 		}
 	}
 	return out

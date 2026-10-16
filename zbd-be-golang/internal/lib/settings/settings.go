@@ -8,6 +8,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"strings"
 	"sync"
 
 	"zbd.kr/be/internal/jsx"
@@ -177,4 +178,24 @@ func (c *Cache) Hosting(hostingID string) *jsx.OrderedMap {
 		}
 	}
 	return nil
+}
+
+// OfficeIPs — 모든 호스팅 SITE.officeIps(관리자 「환경 설정 › 관리자 페이지 › 사무실 IP」, 배열 또는 쉼표 글자). 다듬기·합치기는 util.OfficeIPs.
+func (c *Cache) OfficeIPs() []string {
+	var out []string
+	all := c.All()
+	for _, k := range all.Keys() {
+		site, _ := all.Map(k).V("SITE").(*jsx.OrderedMap)
+		switch v := site.V("officeIps").(type) {
+		case []any:
+			for _, x := range v {
+				if s, ok := x.(string); ok {
+					out = append(out, s)
+				}
+			}
+		case string:
+			out = append(out, strings.Split(v, ",")...)
+		}
+	}
+	return out
 }

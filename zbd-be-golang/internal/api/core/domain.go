@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"zbd.kr/be/internal/jsx"
+	"zbd.kr/be/internal/lib/util"
 	"zbd.kr/be/internal/web"
 )
 
@@ -148,4 +149,17 @@ func socketDomains(c *web.Ctx) {
 		}
 	}
 	c.Scb(jsx.Obj("admin", strList(c.AdminHostsAll()), "cookie", cookie))
+}
+
+// socketOfficeIPs — GET /socket/office-ips · 소켓 서버 전용(헤더 X-Socket-Secret). 사무실 IP = .env OFFICE_IPS + 관리자 설정(SITE.officeIps).
+func socketOfficeIPs(c *web.Ctx) {
+	want := strings.TrimSpace(c.App.Cfg.Get("SOCKET_SECRET"))
+	if want == "" {
+		want = strings.TrimSpace(c.App.Cfg.Get("ADMIN_SOCKET_SECRET"))
+	}
+	if want == "" || subtle.ConstantTimeCompare([]byte(want), []byte(c.R.Header.Get("X-Socket-Secret"))) != 1 {
+		c.Status(403).Ecb("거절")
+		return
+	}
+	c.Scb(jsx.Obj("ips", strList(util.OfficeIPs(c.App.Cfg.Get("OFFICE_IPS")))))
 }

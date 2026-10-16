@@ -24,6 +24,7 @@
 	import DiffPreview from '#lib/shared/ui/DiffPreview.svelte';
 	import JsonEditDialog from '../ui/JsonEditDialog.svelte';
 	import OutlinedField from '../ui/OutlinedField.svelte';
+	import TagInput from '../../ui/TagInput.svelte';
 	import OutlinedSelect from '../ui/OutlinedSelect.svelte';
 	import SiteBasicInfoForm from './SiteBasicInfoForm.svelte';
 	import SettingGroup from '../ui/SettingGroup.svelte';
@@ -61,6 +62,13 @@
 	const dark = 'color-mix(in srgb, var(--theme-color-dark) 80%, transparent)';
 	// 칸 설명(ⓘ 말풍선 — 공용 settings/ui/InfoTip)
 	const TIPS: Record<string, { title?: string; lines: string[] }> = {
+		'사무실 IP': {
+			lines: [
+				'사무실(회사)에서 인터넷에 나가는 공인 IP 예요. 여러 개면 콤마로.',
+				'여기 적은 IP 는 접속 현황·웹로그에서 「사무실」 로 따로 묶이고, 외부 공격 차단 대상에서 빠지고, 공개 체험 횟수 제한에서 빠져요.',
+				'서버 설정(.env OFFICE_IPS)에 적은 값도 함께 쓰여요. 바꾸면 1분 안에 반영돼요.'
+			]
+		},
 		'페이지 타이틀': { lines: ['관리자 화면 브라우저 탭에 나오는 이름이에요.'] },
 		'관리자 테마': { lines: ['관리자 화면의 기본 색 묶음(머리·버튼·강조색).', '사용자 사이트 색은 「홈페이지」 탭의 테마예요.'] },
 		'본문 배경색': { lines: ['관리자 화면 내용 영역의 바탕색이에요.', '흰 카드가 잘 보이게 연회색을 권해요. 비우면 흰색.'] },
@@ -112,6 +120,28 @@
 	{/snippet}
 	{#snippet bg()}{@render bgPick('pageBgColor', PRESETS, '비워두면 흰색(기본).')}{/snippet}
 	{#snippet bgDark()}{@render bgPick('pageBgColorDark', PRESETS_DARK, '비워두면 다크 기본.')}{/snippet}
+	{#snippet officeIps()}
+		<div class={cx('MuiStack-root', toClass({ gap: 6 }))}>
+			<TagInput
+				tags={(Array.isArray(json.officeIps) ? json.officeIps : []).join(',')}
+				onChange={(v) => {
+					const ips = [
+						...new Set(
+							String(v || '')
+								.split(/[\s,]+/)
+								.map((x) => x.trim())
+								.filter((x) => /^[0-9a-fA-F:.\/]+$/.test(x))
+						)
+					];
+					set('officeIps', ips.length ? ips : undefined);
+				}}
+				placeholder="예: 123.45.67.89 — 입력 후 엔터"
+			/>
+			<span class={cx('MuiTypography-root MuiTypography-caption', toClass({ color: 'var(--gt-700, #909090)' }))}
+				>사무실 공인 IP. 접속 현황·웹로그의 사무실 구분, 공격 차단 제외, 체험 횟수 제외에 쓰여요. 비워 두면 서버 설정(.env OFFICE_IPS)만 씁니다.</span
+			>
+		</div>
+	{/snippet}
 	{#snippet adminSession()}
 		<div class={cx('MuiStack-root', toClass({ flexDirection: 'row', gap: 8, alignItems: 'center', flexWrap: 'wrap' }))}>
 			<OutlinedField
@@ -180,6 +210,7 @@
 		</SettingGroup>
 		<SettingGroup title="관리자 로그인" desc="로그인 유지 기간">
 			{@render row('관리자 로그인 유지 기간', adminSession)}
+			{@render row('사무실 IP', officeIps)}
 		</SettingGroup>
 		{#if showImages}
 			<SettingGroup title="관리자 로고 · 파비콘" desc="관리자 화면 왼쪽 위 로고와 탭 아이콘" wrap>

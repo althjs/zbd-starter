@@ -20,6 +20,7 @@ import (
 	"zbd.kr/be/internal/lib/db"
 	"zbd.kr/be/internal/lib/pii"
 	"zbd.kr/be/internal/lib/settings"
+	"zbd.kr/be/internal/lib/util"
 )
 
 type App struct {
@@ -66,6 +67,7 @@ func New(ctx context.Context) (*App, error) {
 		log.Printf("⚠ 개인정보 키 없음 — 회원 이름·이메일을 읽고 쓸 수 없다: %v", err)
 	}
 	a.ReloadCaches(ctx)
+	util.OfficeIPsFromSettings = a.Settings.OfficeIPs // 사무실 IP = .env + 관리자 화면 설정
 
 	if realtimeFactory != nil {
 		a.Realtime = realtimeFactory(a)
