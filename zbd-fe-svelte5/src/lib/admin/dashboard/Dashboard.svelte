@@ -7,6 +7,7 @@
 	import { date, number } from '#lib/shared/format.ts';
 	import { cx, sx as toClass } from '#lib/shared/mui/sx.ts';
 	import Icon from '../ui/Icon.svelte';
+	import AppInstallCard from './AppInstallCard.svelte';
 	import { getWorkStatusCodes } from '../collab/work/codes.ts';
 	import type { DashboardData } from '#lib/shared/types/admin.ts';
 
@@ -63,6 +64,8 @@
 			{@render stat('group', '#0f9d58', '전체 회원', m.totalCount - m.leaveCount, '/admin/user/member', m.leaveRequestCount ? `탈퇴 신청 ${number(m.leaveRequestCount)}명` : '')}
 			{@render stat('view_kanban', '#1c7ed6', '업무 카드', workTotal, '/admin/work/TASK')}
 		</div>
+
+		<AppInstallCard />
 
 		<div class="dash-grid">
 			{#snippet workBody()}

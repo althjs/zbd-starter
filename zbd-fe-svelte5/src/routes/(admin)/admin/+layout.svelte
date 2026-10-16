@@ -13,6 +13,7 @@
 	import AdminShell from '#lib/admin/layout/AdminShell.svelte';
 	import PopupLayout from '#lib/admin/layout/PopupLayout.svelte';
 	import { IN_WIN_FRAME } from '#lib/admin/window/frame.ts';
+	import { isStandalone, markInstalled } from '#lib/admin/app-installed.ts';
 
 	let { children } = $props();
 
@@ -32,6 +33,14 @@
 		const name = admin.loaded ? getMeta('SITE', 'favicon')?.name : '';
 		const el = document.getElementById('zbd-favicon') as HTMLLinkElement | null;
 		if (el && name) el.href = `${adminImagePrefix(hostingIdOf(getMeta('SITE', 'favicon')) || '')}/site/${name}`;
+	});
+	// 설치 앱 표시 — 설치 창으로 열렸거나 방금 설치되면 이 앱(단독 앱 키, 아니면 관리자 앱)을 「설치됨」 으로(대시보드 「웹앱 설치」 가 숨긴다)
+	$effect(() => {
+		const key = SINGLE_APP?.key || 'admin';
+		if (isStandalone()) markInstalled(key);
+		const on = () => markInstalled(key);
+		addEventListener('appinstalled', on);
+		return () => removeEventListener('appinstalled', on);
 	});
 	const popup = $derived(!!SINGLE_APP || page.url.searchParams.get('popup') === '1' || IN_WIN_FRAME); // 화면 위 창(iframe) 안은 옮겨 다녀도 메뉴 없는 틀
 </script>
