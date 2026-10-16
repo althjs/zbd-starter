@@ -44,7 +44,12 @@ func hostOnly(h string) string {
 }
 
 // isAdminHost — 관리자 주소인가(SITE 설정 domains.admin — domains.go)
-func (c *Ctx) isAdminHost(h string) bool { return c.AdminHostsFor(h) != nil }
+func (c *Ctx) isAdminHost(h string) bool {
+	if base, _ := tunnelHosts(c.R); base != "" && tunnelUnder(h, base) { // 외부 접속 주소 — 앱 주소가 관리자 쪽(session_tunnel.go)
+		return hostOnly(h) != base
+	}
+	return c.AdminHostsFor(h) != nil
+}
 
 // IsAdminHost — 관리자 주소인가. 페이지 문서가 관리자 주소의 호스팅을 정할 때
 func (c *Ctx) IsAdminHost(h string) bool { return c.isAdminHost(h) }
@@ -52,6 +57,9 @@ func (c *Ctx) IsAdminHost(h string) bool { return c.isAdminHost(h) }
 // domainFor — 이 주소가 속한 호스팅의 쿠키 도메인(SITE 설정 cookieHost, 예 ".zbd.kr" → "zbd.kr"). 없으면 ""(localhost 등 — 쿠키를 쓰지 않는다).
 func (c *Ctx) domainFor(h string) string {
 	h = hostOnly(h)
+	if base, _ := tunnelHosts(c.R); base != "" && tunnelUnder(h, base) { // 외부 접속 주소 — 그 고객 사이트 주소 아래만(session_tunnel.go)
+		return base
+	}
 	for _, x := range c.App.Settings.Hostings() {
 		m, _ := x.(*jsx.OrderedMap)
 		if m == nil {
@@ -86,7 +94,7 @@ func cookieScope(host, domain string, admin bool) (string, bool) {
 
 // cookieAttr — Set-Cookie 의 Domain 부분(그 주소 전용이면 빈 값)
 func (c *Ctx) cookieAttr() string {
-	if d := c.domainFor(requestHost(c.R)); d != "" {
+	if d := c.domainFor(c.sessHost()); d != "" {
 		return "; Domain=" + d
 	}
 	return ""
@@ -121,7 +129,7 @@ func pickSession(vals []string, valid func(string) bool) string {
 // requestHost — 요청 Host(nginx 가 그대로 넘긴다). X-Forwarded-Host 는 보내는 쪽이 꾸밀 수 있어 보지 않는다.
 func requestHost(r *http.Request) string { return r.Host }
 
-func (c *Ctx) adminRealm() bool { return c.isAdminHost(requestHost(c.R)) }
+func (c *Ctx) adminRealm() bool { return c.isAdminHost(c.sessHost()) }
 
 // SessionDays — 이 요청 쪽(사용자/관리자) 의 로그인 유지 기간(일)
 func (c *Ctx) SessionDays(hostingID string) int {
@@ -152,11 +160,14 @@ func (c *Ctx) originOK() bool {
 		return c.Method == http.MethodGet || c.Method == http.MethodHead
 	}
 	u, err := url.Parse(o)
-	if err != nil || u.Scheme != "https" || c.domainFor(u.Host) != c.domainFor(requestHost(c.R)) {
+	if err == nil {
+		u = c.tunnelOrigin(u)
+	}
+	if err != nil || u.Scheme != "https" || c.domainFor(u.Host) != c.domainFor(c.sessHost()) {
 		return false
 	}
 	// 그 주소 전용 쿠키(대표 도메인 밖 관리자 주소)면 같은 주소에서 온 요청만
-	if c.domainFor(requestHost(c.R)) == "" && hostOnly(u.Host) != hostOnly(requestHost(c.R)) {
+	if c.domainFor(c.sessHost()) == "" && hostOnly(u.Host) != hostOnly(c.sessHost()) {
 		return false
 	}
 	return c.isAdminHost(u.Host) == c.adminRealm()
@@ -164,7 +175,7 @@ func (c *Ctx) originOK() bool {
 
 // loadSession — 헤더 토큰이 없으면 이쪽 세션 쿠키를 읽는다. 기간이 지났거나 출처가 맞지 않으면 손님.
 func (c *Ctx) loadSession() {
-	if bearer(c.R.Header.Get("Authorization")) != "" || !c.cookieHostOK(requestHost(c.R)) {
+	if bearer(c.R.Header.Get("Authorization")) != "" || !c.cookieHostOK(c.sessHost()) {
 		return
 	}
 	name := UserSessionCookie
@@ -238,7 +249,7 @@ func (c *Ctx) setSessionCookie(tok string, days int) {
 // (화면 스크립트가 토큰을 보지 못하게). 대표 도메인이 아니거나(개발) 토큰의 쪽이 주소와 다르면 false.
 func (c *Ctx) IssueSession(tok string) bool {
 	// 스크립트(맥미니 중계·board.mjs 등)는 헤더 X-Token-Delivery: body 로 「본문으로 달라」 고 한다 — 쿠키를 못 쓰는 쪽
-	if !c.cookieHostOK(requestHost(c.R)) || strings.EqualFold(c.R.Header.Get("X-Token-Delivery"), "body") {
+	if !c.cookieHostOK(c.sessHost()) || strings.EqualFold(c.R.Header.Get("X-Token-Delivery"), "body") {
 		return false
 	}
 	t := auth.ParseString(tok, c.App.Cfg.AESKey, c.App.Cfg.AESIV)
@@ -251,7 +262,7 @@ func (c *Ctx) IssueSession(tok string) bool {
 
 // ClearSession — 이쪽 세션 쿠키를 지운다(로그아웃·기간 지남)
 func (c *Ctx) ClearSession() {
-	if !c.cookieHostOK(requestHost(c.R)) {
+	if !c.cookieHostOK(c.sessHost()) {
 		return
 	}
 	name, mark := UserSessionCookie, userMarkCookie
@@ -271,6 +282,10 @@ func (c *Ctx) PasskeyRP() (rpID, origin string, admin, ok bool) {
 	u, err := url.Parse(origin)
 	if origin == "" || err != nil {
 		return "", "", false, false
+	}
+	u = c.tunnelOrigin(u)
+	if u.Scheme == "https" && origin != u.String() { // 외부 접속 주소 — 브라우저가 본 출처
+		origin = u.String()
 	}
 	if hostOnly(u.Host) == "localhost" { // 127.0.0.1 은 RP 가 될 수 없다(IP 금지)
 		return "localhost", origin, c.R.URL.Query().Get("realm") != "user", u.Scheme == "http" || u.Scheme == "https"

@@ -42,7 +42,7 @@ function cookieHostHere(): string {
 
 /**
  * 외부 접속 주소(zbd tunnel)의 사이트 주소(예 starter-76.zbd.co.kr) — 지금 주소가 그 주소이거나 그 아래 앱 주소(admin.·chat.·mail.…)일 때만.
- * 개발 서버가 문서에 넣는다(hooks.server.ts tunnelHead). 앱 주소끼리 로그인을 나눠 쓰려고 브라우저 id·개발 토큰 쿠키를 이 주소에 심는다
+ * 개발 서버가 문서에 넣는다(hooks.server.ts tunnelHead). 앱 주소끼리 로그인을 나눠 쓰려고 이 주소에서는 서버 세션 쿠키(운영과 같은 HttpOnly)·브라우저 id 를 이 주소에 심는다
  * (2026-10-16 대표 — 메신저 주소로 가면 다시 로그인했다). 범위가 이 고객 주소 아래뿐이라 다른 고객(starter-11…)으로는 가지 않는다.
  */
 function tunnelBaseHere(): string {
