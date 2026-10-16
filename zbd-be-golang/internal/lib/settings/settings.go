@@ -13,6 +13,7 @@ import (
 
 	"zbd.kr/be/internal/jsx"
 	"zbd.kr/be/internal/lib/db"
+	"zbd.kr/be/internal/lib/holiday"
 )
 
 type Cache struct {
@@ -80,6 +81,11 @@ func fixup(m *jsx.OrderedMap, hostingsKey string) {
 	common := m.Map("").V("COMMON")
 	if common == nil {
 		common = jsx.NewOrderedMap()
+	}
+	// 공휴일 = 코드 표 + 설정 COMMON.holydays(lib/holiday) — 달력들이 읽는 COMMON.holydays 를 합친 목록으로
+	if cm, ok := common.(*jsx.OrderedMap); ok {
+		holiday.SetExtra(cm.V("holydays"))
+		cm.Set("holydays", holiday.List())
 	}
 	hostings := m.Map("").Map(hostingsKey).Arr("items")
 	find := func(cid string) *jsx.OrderedMap {
