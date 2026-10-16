@@ -31,6 +31,7 @@ func Register(r *web.Router) {
 	r.Handle("/admin/group", web.Auth, adminGroup, web.Options{Changes: true})
 	r.Handle("/admin/group/[groupId]", web.Auth, adminGroupOne, web.Options{Changes: true})
 	r.Handle("/admin/group/auth/[groupId]", web.Auth, adminGroupAuth, web.Options{Changes: true})
+	r.Handle("/admin/group-perms", web.Auth, adminGroupPerms) // 세부 권한 목록(groups.go)
 	r.Handle("/admin/member", web.Auth, adminMember, web.Options{Changes: true})
 	r.Handle("/admin/member/[adminId]", web.Auth, adminMemberOne, web.Options{Changes: true})
 	r.Handle("/admin/member/group/[groupId]", web.Auth, adminMemberByGroup)

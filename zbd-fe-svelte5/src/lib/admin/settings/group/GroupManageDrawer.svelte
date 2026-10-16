@@ -3,9 +3,11 @@
 	 * 관리자 그룹 추가·수정 서랍(React setting/group/components/GroupManageDrawer) — 이름 · 설명 · 메모(기록) · 삭제(구성원 0명일 때만).
 	 * 저장: 수정 PUT /service/admin/group/{groupId} · 추가 POST /service/admin/group(json 문자열, hostingId) · 삭제 DELETE.
 	 * group 을 넘기면 열린다(새로 = { groupId: 0 }).
+	 * 세부 권한(2026-10-16) — json.perms = ["attendance.ip", …]. 목록은 서버 GET /service/admin/group-perms(기능마다 Go adminauth.RegisterPerm). 개발자·최고 관리자는 늘 허용.
 	 */
 	import { untrack } from 'svelte';
 	import { api } from '#lib/shared/api.ts';
+	import Checkbox from '#lib/shared/mui/Checkbox.svelte';
 	import { number } from '#lib/shared/format.ts';
 	import Drawer from '#lib/shared/mui/Drawer.svelte';
 	import { cx, sx as toClass } from '#lib/shared/mui/sx.ts';
@@ -34,6 +36,19 @@
 	let orig = '';
 	let memo = $state('');
 	let jsonOpen = $state(false);
+	type PermDef = { key: string; name: string; group: string; desc?: string };
+	let permDefs = $state<PermDef[]>([]);
+	api.get<PermDef[]>('/service/admin/group-perms').then((o) => o.ok && (permDefs = o.data || []));
+	const permGroups = $derived.by(() => {
+		const m = new Map<string, PermDef[]>();
+		for (const d of permDefs) m.set(d.group, [...(m.get(d.group) || []), d]);
+		return [...m];
+	});
+	const hasPerm = (key: string) => ((g?.json?.perms as string[]) || []).includes(key);
+	function setPerm(key: string, on: boolean) {
+		const cur: string[] = (g.json.perms || []).filter((k: string) => k != key);
+		g = { ...g, json: { ...g.json, perms: on ? [...cur, key] : cur } };
+	}
 
 	$effect(() => {
 		const x = input;
@@ -122,6 +137,22 @@
 						>{/snippet}
 				</StandardField>
 			</div>
+			{#if permGroups.length}
+				<div class="MuiStack-root">
+					<div class={cx(h6, toClass({ marginBottom: 4 }))}>세부 권한</div>
+					<span class={cx('MuiTypography-root MuiTypography-caption', toClass({ color: 'var(--adm-text2, #667085)', marginBottom: 8 }))}
+						>메뉴 권한과 별도로 설정을 바꿀 수 있는 권한입니다. 개발자·최고 관리자는 늘 허용됩니다.</span
+					>
+					{#each permGroups as [name, defs] (name)}
+						<div class={cx('MuiStack-root', toClass({ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }))}>
+							<b class={toClass({ fontSize: 13, minWidth: 80 })}>{name}</b>
+							{#each defs as d (d.key)}
+								<span title={d.desc || d.key}><Checkbox checked={hasPerm(d.key)} label={d.name} onchange={(v) => setPerm(d.key, v)} /></span>
+							{/each}
+						</div>
+					{/each}
+				</div>
+			{/if}
 			<div class="MuiStack-root"><MemoHistory memos={g?.json?.memos} /></div>
 			{#if onDelete && g.groupId > 0 && adminMembers.list && memberCount == 0}
 				<Button variant="contained" color="error" sx={{ width: 'fit-content' }} onclick={remove}>그룹 삭제</Button>

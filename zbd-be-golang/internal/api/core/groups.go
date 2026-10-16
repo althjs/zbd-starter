@@ -5,6 +5,7 @@ import (
 	"database/sql"
 
 	"zbd.kr/be/internal/jsx"
+	"zbd.kr/be/internal/lib/adminauth"
 	"zbd.kr/be/internal/lib/db"
 	"zbd.kr/be/internal/web"
 )
@@ -190,4 +191,23 @@ func adminGroupAuth(c *web.Ctx) {
 	default:
 		c.Ecb("잘못된 요청")
 	}
+}
+
+// adminGroupPerms — GET 세부 권한 목록(권한 그룹 화면의 체크 칸) — 기능마다 adminauth.RegisterPerm 으로 등록한 것
+func adminGroupPerms(c *web.Ctx) {
+	if c.Method != "GET" {
+		c.Ecb("잘못된 요청")
+		return
+	}
+	defs := adminauth.PermDefs()
+	out := make([]any, 0, len(defs))
+	for _, d := range defs {
+		m := jsx.NewOrderedMap()
+		m.Set("key", d.Key)
+		m.Set("name", d.Name)
+		m.Set("group", d.Group)
+		m.Set("desc", d.Desc)
+		out = append(out, m)
+	}
+	c.Scb(out)
 }

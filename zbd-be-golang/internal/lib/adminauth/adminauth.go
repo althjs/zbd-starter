@@ -23,9 +23,10 @@ import (
 
 type Snapshot struct {
 	Menus          []*jsx.OrderedMap
-	ApisMap        *jsx.OrderedMap // api → []any(menuId)
-	HostingApisMap *jsx.OrderedMap // hostingId → (api → []any)
-	MemberAuthMap  *jsx.OrderedMap // adminId(문자열) → 항목
+	ApisMap        *jsx.OrderedMap            // api → []any(menuId)
+	HostingApisMap *jsx.OrderedMap            // hostingId → (api → []any)
+	MemberAuthMap  *jsx.OrderedMap            // adminId(문자열) → 항목
+	RolePerms      map[string]map[string]bool // groupId → 세부 권한(perms.go)
 }
 
 type Cache struct {
@@ -34,7 +35,7 @@ type Cache struct {
 }
 
 func New() *Cache {
-	return &Cache{snap: &Snapshot{ApisMap: jsx.NewOrderedMap(), HostingApisMap: jsx.NewOrderedMap(), MemberAuthMap: jsx.NewOrderedMap()}}
+	return &Cache{snap: &Snapshot{ApisMap: jsx.NewOrderedMap(), HostingApisMap: jsx.NewOrderedMap(), MemberAuthMap: jsx.NewOrderedMap(), RolePerms: map[string]map[string]bool{}}}
 }
 
 // Get — 지금 캐시(읽기 전용으로 쓴다 — 고치려면 jsx.Clone)
@@ -85,6 +86,17 @@ ON a.menuId = b.menuId AND a.hostingId = b.hostingId`)
 			groupAuth[g] = jsx.NewOrderedMap()
 		}
 		groupAuth[g].Set(jsx.Str(r.V("menuId")), r.V("auth"))
+	}
+
+	rp, err := db.Query(ctx, d, `select groupId, json from admin_roles`)
+	if err != nil {
+		return nil, err
+	}
+	rolePerms := map[string]map[string]bool{}
+	for _, r := range rp {
+		if p := RolePermsOf(jsx.ParseMap(jsx.StrOrEmpty(r.V("json")))); len(p) > 0 {
+			rolePerms[jsx.Str(r.V("groupId"))] = p
+		}
 	}
 
 	ad, err := db.Query(ctx, d, `SELECT adminId, groupId, name, email, mobile, json, hostingId FROM admins WHERE status = 0`)
@@ -150,7 +162,7 @@ ON a.menuId = b.menuId AND a.hostingId = b.hostingId`)
 		}
 		mam.Set(id, e)
 	}
-	return &Snapshot{Menus: menus, ApisMap: apisMap, HostingApisMap: hostingApisMap, MemberAuthMap: mam}, nil
+	return &Snapshot{Menus: menus, ApisMap: apisMap, HostingApisMap: hostingApisMap, MemberAuthMap: mam, RolePerms: rolePerms}, nil
 }
 
 // MakeMenuTree — 메뉴 행 → 트리(1단 + items) · API 맵. 행은 고쳐진다(apis 를 배열로, api_count·items 추가).
