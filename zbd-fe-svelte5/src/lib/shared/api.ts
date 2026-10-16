@@ -15,7 +15,7 @@
  *   예전에 localStorage 에 남은 토큰은 첫 요청 때 서버에 보내 쿠키로 바꾸고 지운다(migrateSession — 옮기는 기간).
  * 어느 쪽인지(사용자/관리자)는 화면 묶음(route group) 이 `setRealm` 으로 정한다. 서버는 주소로 쿠키를 고른다.
  */
-import { ADMIN_HOSTS, COOKIE_HOST } from './config';
+import { ADMIN_HOSTS, COOKIE_HOST, TUNNEL_BASE } from './config';
 import { getCookie, removeCookie, setCookie } from './cookie';
 import { SK } from './storage-keys';
 
@@ -101,7 +101,29 @@ const MARK_COOKIE: Record<Realm, string> = { user: 'zbd_user_in', admin: 'zbd_ad
 /** 헤더에 실을 토큰 — 운영(세션 쿠키) 에서는 늘 ""(화면은 토큰을 갖지 않는다) */
 export function getToken(r: Realm = realm) {
 	if (COOKIE_SESSION || typeof localStorage == 'undefined') return '';
-	return localStorage.getItem(TOKEN_KEYS[r]) || '';
+	return tunnelToken(r) || localStorage.getItem(TOKEN_KEYS[r]) || '';
+}
+
+/**
+ * 외부 접속 주소(터널)의 개발 토큰 — 사이트 주소(starter-N.zbd.co.kr) 쿠키에도 둬서 앱 주소(admin.·chat.·mail.…)가 같은 로그인을 쓴다.
+ * 개발 토큰은 원래 화면이 읽는 localStorage 에 있으니 화면이 읽을 수 있는 쿠키여도 더 열리는 것은 없다. 운영(세션 쿠키)·localhost 는 쓰지 않는다.
+ */
+const TUNNEL_TOKEN_COOKIE: Record<Realm, string> = { user: 'zbd_dev_user_token', admin: 'zbd_dev_admin_token' };
+function tunnelToken(r: Realm) {
+	if (!TUNNEL_BASE) return '';
+	const v = getCookie(TUNNEL_TOKEN_COOKIE[r]);
+	if (v) return v;
+	// 이 변경 전에 로그인한 토큰 — 대표 주소(관리자 = admin.사이트 주소 · 회원 = 사이트 주소)의 것만 올린다(브라우저 id 를 그 주소 값으로 합치므로)
+	const own = localStorage.getItem(TOKEN_KEYS[r]) || '';
+	if (own && location.hostname == (r == 'admin' ? ADMIN_HOSTS[0] : TUNNEL_BASE)) setTunnelToken(r, own);
+	return own;
+}
+function setTunnelToken(r: Realm, token: string) {
+	if (!TUNNEL_BASE || typeof document == 'undefined') return;
+	const name = TUNNEL_TOKEN_COOKIE[r];
+	document.cookie = token
+		? `${name}=${encodeURIComponent(token)}; path=/; domain=${TUNNEL_BASE}; secure; samesite=lax; expires=${new Date(Date.now() + 30 * 864e5).toUTCString()}`
+		: `${name}=; path=/; domain=${TUNNEL_BASE}; secure; samesite=lax; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
 }
 
 /** 로그인돼 있는가(서버에 묻지 않고) — 운영은 표시 쿠키, 개발은 토큰 */
@@ -111,13 +133,17 @@ export function isLoggedIn(r: Realm = realm) {
 
 /** 서버가 본문으로 준 토큰(개발 주소에서만 온다) 을 저장 */
 export function saveToken(r: Realm, token?: string) {
-	if (!COOKIE_SESSION && token && typeof localStorage != 'undefined') localStorage.setItem(TOKEN_KEYS[r], token);
+	if (!COOKIE_SESSION && token && typeof localStorage != 'undefined') {
+		localStorage.setItem(TOKEN_KEYS[r], token);
+		setTunnelToken(r, token);
+	}
 }
 
 /** 로그아웃 — 서버가 세션 쿠키를 지운다(HttpOnly 라 화면이 못 지운다) */
 export async function endSession(r: Realm = realm) {
 	await request('GET', '/service/login/logout').catch(() => null);
 	if (typeof localStorage != 'undefined') localStorage.removeItem(TOKEN_KEYS[r]);
+	setTunnelToken(r, '');
 }
 
 // 옮기는 기간(2026-10): localStorage 에 남은 옛 토큰 → 세션 쿠키. 지울 때 이 표시를 찾는다
