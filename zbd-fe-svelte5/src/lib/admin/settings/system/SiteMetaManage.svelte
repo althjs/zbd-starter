@@ -58,7 +58,8 @@
 		{ label: '짙은 회색', value: '#121212' },
 		{ label: '먹색', value: '#17191c' }
 	];
-	const showImages = $derived(admin.profile?.hostingId == '' || (!!admin.profile?.hostingId && admin.profile.hostingId == hostingIdOf(json)));
+	// 로고·파비콘 칸 = 이 설정 줄이 내 호스팅 것일 때. 줄의 호스팅(meta.hostingId)으로 본다 — json 안 hostingId 는 옛 데이터에만 있어 스타터 새 사이트에서 칸이 숨었다(2026-10-19)
+	const showImages = $derived(admin.profile?.hostingId == '' || (!!admin.profile?.hostingId && admin.profile.hostingId == (hostingIdOf(meta) ?? hostingIdOf(json))));
 	const dark = 'color-mix(in srgb, var(--theme-color-dark) 80%, transparent)';
 	// 칸 설명(ⓘ 말풍선 — 공용 settings/ui/InfoTip)
 	const TIPS: Record<string, { title?: string; lines: string[] }> = {
