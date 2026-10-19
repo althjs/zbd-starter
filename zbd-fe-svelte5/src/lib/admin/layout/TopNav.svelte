@@ -17,6 +17,11 @@
 	import NavigationView from './NavigationView.svelte';
 	import Profile from './Profile.svelte';
 
+	// 플러그인이 머리줄 오른쪽에 끼우는 것 — topnav/{기능}.svelte 한 파일씩(스타터는 비어 있고, 플러그인이 넣는다 · 이름 순)
+	const SLOTS = Object.entries(import.meta.glob<{ default: any }>('./topnav/*.svelte', { eager: true }))
+		.sort(([a], [b]) => a.localeCompare(b))
+		.map(([, m]) => m.default);
+
 	let { onNavOpen }: { onNavOpen: () => void } = $props();
 
 	const logo = $derived(getMeta('SITE', 'logo'));
@@ -68,6 +73,9 @@
 				{/if}
 			</div>
 			<div class={cx('MuiStack-root', toClass({ flexDirection: 'row', alignItems: 'center' }))}>
+				{#each SLOTS as Slot, i (i)}
+					<Slot />
+				{/each}
 				{#if !media.mdDown}
 					<!-- 도움말 주소가 없으면 버튼을 숨긴다(예전엔 oye 노션 안내서로 갔다) -->
 					{#if getMeta('SITE', 'helpUrl')}
