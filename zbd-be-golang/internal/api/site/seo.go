@@ -627,7 +627,9 @@ func renderSeo(ctx context.Context, c *web.Ctx, conn *sql.Conn, rawP, p string, 
 	adminHosts := c.AdminHostsFor(host)
 	// 관리자 주소 — 탭 아이콘·로고는 「관리자 페이지」 설정(SITE.favicon·SITE.logo). 로그인 전 화면(로그인)은 설정을 못 읽어 문서에 싣는다(2026-10-19)
 	adminLogo := ""
-	if adminHosts != nil {
+	// 개발 한 주소(localhost·외부 접속 주소 터널)는 관리자 주소 목록이 없다 — 관리자 경로로 온 문서면 같은 값을 싣는다(개발 화면이 로그인 화면에 쓴다)
+	devAdmin := adminHosts == nil && web.IsLocalHost(host) && (p == "/admin" || strings.HasPrefix(p, "/admin/") || p == "/login" || strings.HasPrefix(p, "/login/"))
+	if adminHosts != nil || devAdmin {
 		if n := orStr(siteMeta.Map("favicon").V("name")); n != "" {
 			s.favicon = cdn + hostingID + "/site/" + n
 		}
@@ -644,6 +646,10 @@ func renderSeo(ctx context.Context, c *web.Ctx, conn *sql.Conn, rawP, p string, 
 	//   zbd:host-realm = 이 주소가 관리자(admin)·사용자(user) 어느 쪽인가 — 화면이 맞지 않는 묶음을 그리지 않는다. 개발 한 주소(localhost)는 싣지 않는다(검사 끔)
 	if ah := adminHosts; ah != nil {
 		parts.data += `<meta name="zbd:host-realm" content="admin">` + "\n" + `<meta name="zbd:admin-hosts" content="` + escAttr(strings.Join(ah, ",")) + `">` + "\n"
+		if adminLogo != "" {
+			parts.data += `<meta name="zbd:admin-logo" content="` + escAttr(adminLogo) + `">` + "\n"
+		}
+	} else if devAdmin {
 		if adminLogo != "" {
 			parts.data += `<meta name="zbd:admin-logo" content="` + escAttr(adminLogo) + `">` + "\n"
 		}

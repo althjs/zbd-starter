@@ -81,6 +81,22 @@ function tunnelHead(headers: Headers): string {
 	return out;
 }
 
+/** 관리자 화면의 로고·탭 아이콘(「관리자 페이지」 설정) — 로그인 전엔 화면이 설정을 못 읽으니 BE 문서에서 그 두 줄만 가져온다(2026-10-19) */
+let brandCache = { at: 0, v: '' };
+async function adminBrand(ua: string): Promise<string> {
+	if (!LOCAL) return '';
+	if (Date.now() - brandCache.at < 20_000) return brandCache.v;
+	let v = '';
+	try {
+		const html = await (await fetch(docURL('/admin/login'), { headers: { 'user-agent': ua || 'zbd-fe-svelte5-dev', accept: 'text/html' }, redirect: 'manual' })).text();
+		v = (html.match(/<meta name="zbd:admin-logo"[^>]*>/)?.[0] || '') + (html.match(/<link rel="icon"[^>]*>/)?.[0] || '');
+	} catch {
+		/* BE 가 아직 안 떴으면 기본 로고 */
+	}
+	brandCache = { at: Date.now(), v };
+	return v;
+}
+
 export const handle: Handle = async ({ event, resolve }) => {
 	// /sitemap.xml · /robots.txt — 운영 nginx 처럼 BE 로(개발 서버가 화면으로 그리지 않게)
 	if (LOCAL && (event.url.pathname == '/sitemap.xml' || event.url.pathname == '/robots.txt')) {
@@ -92,7 +108,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 	if (event.request.method != 'GET' || accept.indexOf('text/html') == -1) return resolve(event);
 	// 관리자 화면(/admin·/login)은 사용자 사이트 머리말이 필요 없다 — 운영 zbd.kr 은 /admin 을 홈으로 넘기므로(2026-10-03) 받으러 가면 개발에서도 홈으로 튕긴다
 	const tunnel = tunnelHead(event.request.headers);
-	if (/^\/(admin|login)(\/|$)/.test(event.url.pathname)) return resolve(event, { transformPageChunk: ({ html }) => html.replace('<!--zbd:head-->', '<title>관리자</title>' + tunnel) });
+	if (/^\/(admin|login)(\/|$)/.test(event.url.pathname)) {
+		const brand = await adminBrand(event.request.headers.get('user-agent') || '');
+		return resolve(event, { transformPageChunk: ({ html }) => html.replace('<!--zbd:head-->', '<title>관리자</title>' + brand + tunnel) });
+	}
 
 	const doc = await upstreamDoc(event.url.pathname + event.url.search, event.request.headers.get('user-agent') || '');
 	if (doc.redirect) {
