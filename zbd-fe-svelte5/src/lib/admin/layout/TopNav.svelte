@@ -73,9 +73,6 @@
 				{/if}
 			</div>
 			<div class={cx('MuiStack-root', toClass({ flexDirection: 'row', alignItems: 'center' }))}>
-				{#each SLOTS as Slot, i (i)}
-					<Slot />
-				{/each}
 				{#if !media.mdDown}
 					<!-- 도움말 주소가 없으면 버튼을 숨긴다(예전엔 oye 노션 안내서로 갔다) -->
 					{#if getMeta('SITE', 'helpUrl')}
@@ -90,6 +87,9 @@
 					</Tooltip>
 					<DarkModeToggle iconColor={lightest} />
 				{/if}
+				{#each SLOTS as Slot, i (i)}
+					<Slot />
+				{/each}
 				<Profile sx={{ marginLeft: 8 }} />
 			</div>
 		</div>
