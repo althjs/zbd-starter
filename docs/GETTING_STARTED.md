@@ -16,7 +16,7 @@ zbd-starter 를 받아 **내 컴퓨터에서 내 사이트를 띄우고, 관리�
 | 권장 | Claude Code — 이 폴더를 열면 `CLAUDE.md` 규칙대로 Claude 가 같이 일한다 |
 
 포트 **5000(화면) · 5001(서버) · 3306(DB)** 를 쓴다.
-⚠ macOS 는 「AirPlay 수신 모드」 가 5000 을 쓰고 있을 수 있다 → 시스템 설정 › 일반 › AirDrop 및 Handoff 에서 끄거나 `FE_PORT=5100 ./run_dev.sh`.
+⚠ macOS 는 「AirPlay 수신 모드」 가 5000 을 쓰고 있을 수 있다 → 시스템 설정 › 일반 › AirDrop 및 Handoff 에서 끄거나 포트를 바꾼다(아래 「포트 바꾸기」).
 
 ---
 
@@ -106,8 +106,26 @@ cd my-service
 ```bash
 ./run_dev.sh                         # 띄우기(Ctrl+C 로 끄기)
 ./db/setup.sh --status               # 적용된 DB 마이그레이션
-BE_PORT=5101 FE_PORT=5100 ./run_dev.sh   # 포트 바꾸기
+BE_PORT=5101 FE_PORT=5100 ./run_dev.sh   # 이번 한 번만 다른 포트로
 ```
+
+### 포트 바꾸기
+
+늘 다른 포트로 띄우려면 `zbd-be-golang/.env.local` 에 적는다(처음 실행 때 만들어진다 — git 에 안 올라간다).
+
+```bash
+# zbd-be-golang/.env.local
+PORT=5101        # 서버(BE) — 기본 5001 (BE_PORT=5101 로 적어도 된다)
+FE_PORT=5100     # 화면(FE) — 기본 5000. 관리자 주소도 http://localhost:5100/admin 이 된다
+SOCK_PORT=4016   # 소켓 데몬 — 기본 4006, 웹소켓 플러그인을 붙였을 때만 쓴다
+```
+
+- 고친 뒤 `./run_dev.sh` 를 껐다 켠다.
+- 순서: 명령 앞 값(`FE_PORT=… ./run_dev.sh`) → `.env.local` → 기본값. 명령 앞 값은 그 실행에만 쓰이고 파일은 안 바뀐다.
+- 서버·화면 포트가 같거나 숫자가 아니면 바로 멈추고 알린다. 포트가 이미 쓰이고 있으면 무엇이 쥐고 있는지 알려 준다.
+- 소켓 데몬 포트를 다른 프로그램이 쓰고 있으면 빈 포트(+10씩)를 골라 `.env.local SOCK_PORT` 에 남긴다.
+- DB 포트는 같은 파일의 `DB_PORT`(기본 3306).
+- Claude 통합 중계(`zbd install claude-integration`)를 붙였다면, 중계 설정의 관리자 주소도 바뀐 화면 포트(`http://localhost:5100`)로 맞춘다.
 
 - 코드를 저장하면 서버(air)·화면(vite)이 알아서 다시 읽는다. `.env.local` 을 고쳤으면 `run_dev.sh` 를 껐다 켠다.
 - 검사: 서버 `gofmt -l . && go vet ./... && go build ./...` · 화면 `npx svelte-check && npx prettier --check .`

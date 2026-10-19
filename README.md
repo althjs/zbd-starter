@@ -31,7 +31,7 @@ git clone <이 저장소> my-service && cd my-service
 5. **첫 관리자·시험 회원** — 관리자 `admin@example.com` · 회원 `user@example.com`, 비밀번호는 무작위로 `.dev/account.txt` 에.
 6. **실행** — BE http://127.0.0.1:5001 · FE http://localhost:5000 (관리자 http://localhost:5000/admin). 로그는 `[be]`·`[fe]` 머리를 달고 한 화면에.
 
-**Ctrl+C** 로 둘 다 끈다. 포트는 `BE_PORT=… FE_PORT=… ./run_dev.sh` 로 바꿀 수 있다.
+**Ctrl+C** 로 둘 다 끈다. 포트는 `zbd-be-golang/.env.local` 의 `PORT`(서버)·`FE_PORT`(화면)·`SOCK_PORT`(소켓 데몬)로 바꾼다 — 한 번만은 `BE_PORT=… FE_PORT=… ./run_dev.sh`(docs/GETTING_STARTED.md 「포트 바꾸기」).
 
 **Windows** 는 `run_dev.bat` 을 더블클릭 — 같은 일을 한다(서버는 따로 뜨는 `[be]` 창, DB 는 `.dev\mariadb` 에 두고 뒤에서 계속 돈다).
 

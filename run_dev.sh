@@ -7,22 +7,34 @@
 #   .dev/account.txt           첫 관리자·시험 회원 이메일·비밀번호(600)
 #   .dev/index.html · .dev/upload/   BE 가 쓰는 문서 틀 · 업로드 폴더
 #
-# 포트: BE 5001 · FE 5000 · 소켓 데몬 4006(웹소켓 플러그인을 붙였을 때만) — BE_PORT·FE_PORT·SOCK_PORT 로 바꿀 수 있다
+# 포트: BE 5001 · FE 5000 · 소켓 데몬 4006(웹소켓 플러그인을 붙였을 때만)
+#   바꾸기 = zbd-be-golang/.env.local 에 PORT=(BE) · FE_PORT= · SOCK_PORT= 를 적는다(늘 그 포트로)
+#   한 번만 = BE_PORT=… FE_PORT=… SOCK_PORT=… ./run_dev.sh (명령 앞 값이 .env.local 보다 먼저)
 # 외부 접속 주소(zbd tunnel): zbd 로그인 + 구매가 유효하면 자동으로 같이 뜬다 — 끄기 TUNNEL=0
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 BE="$ROOT/zbd-be-golang"
 FE="$ROOT/zbd-fe-svelte5"
 DEV="$ROOT/.dev"
-BE_PORT="${BE_PORT:-5001}"
-FE_PORT="${FE_PORT:-5000}"
-SOCK_PORT_ARG="${SOCK_PORT:-}" # 직접 준 값이 있으면 그것, 없으면 지난번 고른 포트(.env.local SOCK_PORT) → 4006
-SOCK_PORT="${SOCK_PORT:-4006}"
 NODE_MIN=22
 OS="$(uname)"
 
 say() { printf '\033[1;36m▶ %s\033[0m\n' "$*"; }
 die() { printf '\033[1;31m✗ %s\033[0m\n' "$*"; exit 1; }
+
+# ─── 포트 — 명령 앞 값 → .env.local → 기본값. .env.local 의 BE 포트는 BE 가 읽는 PORT(BE_PORT 라고 적어도 된다) ───
+envlocal() { [ -f "$BE/.env.local" ] && grep -E "^$1=" "$BE/.env.local" | tail -1 | cut -d= -f2- | tr -d '"'"'"' \r' || true; }
+BE_PORT="${BE_PORT:-$(envlocal BE_PORT)}"
+BE_PORT="${BE_PORT:-$(envlocal PORT)}"
+BE_PORT="${BE_PORT:-5001}"
+FE_PORT="${FE_PORT:-$(envlocal FE_PORT)}"
+FE_PORT="${FE_PORT:-5000}"
+SOCK_PORT_ARG="${SOCK_PORT:-}" # 직접 준 값이 있으면 그것, 없으면 .env.local SOCK_PORT(지난번 고른 포트) → 4006
+SOCK_PORT="${SOCK_PORT:-4006}"
+for _p in "$BE_PORT" "$FE_PORT" "$SOCK_PORT"; do
+	case "$_p" in ''|*[!0-9]*) die "포트 값이 숫자가 아닙니다: '$_p' — zbd-be-golang/.env.local 의 PORT·FE_PORT·SOCK_PORT 를 확인하세요" ;; esac
+done
+[ "$BE_PORT" != "$FE_PORT" ] || die "BE 포트와 FE 포트가 같습니다($BE_PORT) — 다르게 정해 주세요"
 
 # ─── 1. 도구 ───────────────────────────────────────────────
 need_brew() {
@@ -102,7 +114,9 @@ if [ ! -f "$BE/.env.local" ]; then
 	umask 077
 	cat >"$BE/.env.local" <<EOF
 # run_dev.sh 가 만든 개발 설정 — git 에 올리지 않는다. 키를 잃으면 이 DB 의 회원 개인정보를 못 읽는다.
+# 포트 — 고치면 run_dev.sh 를 껐다 켠다(PORT = 서버, FE_PORT = 화면, SOCK_PORT = 소켓 데몬)
 PORT=$BE_PORT
+FE_PORT=$FE_PORT
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_NAME=zbd_starter
