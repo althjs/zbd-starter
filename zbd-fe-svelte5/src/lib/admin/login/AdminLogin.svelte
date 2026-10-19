@@ -8,14 +8,17 @@
 	import { goto } from '$app/navigation';
 	import { api, saveToken } from '#lib/shared/api.ts';
 	import { HOST_HOSTING, LS } from '../config.ts';
-	import { HOSTING_ID } from '#lib/shared/config.ts';
-	import { getHostingItems } from '../meta.svelte.ts';
+	import { ADMIN_LOGO, HOSTING_ID, hostingIdOf } from '#lib/shared/config.ts';
+	import { adminImagePrefix, getHostingItems, getMeta } from '../meta.svelte.ts';
 	import Logo from '../layout/Logo.svelte';
 	import SvgIcon from '../ui/SvgIcon.svelte';
 	import { alert } from '../ui/modal.svelte.ts';
 	import { ensureBrowserUid } from '../uid.ts';
 	import { cancelled, loginWithPasskey, passkeySupported } from '#lib/shared/passkey.ts';
 
+	// 로고 = 「관리자 페이지」 설정 로고(서버가 문서에 실어 줌 → 없으면 지난 접속 때 받아 둔 설정) → 없으면 기본 Starter 로고
+	const cachedLogo = getMeta('SITE', 'logo');
+	const logoSrc = ADMIN_LOGO || (cachedLogo?.name ? `${adminImagePrefix(hostingIdOf(cachedLogo) || '')}/site/${cachedLogo.name}` : '');
 	const hostHosting = typeof location != 'undefined' ? HOST_HOSTING[location.host] : '';
 	function saved() {
 		try {
@@ -76,7 +79,7 @@
 
 <div class="zl">
 	<div class="zl-brand">
-		<Logo height={30} color="#fff" heart="#ff8f87" />
+		{#if logoSrc}<img class="zl-logo" src={logoSrc} alt="" />{:else}<Logo height={30} color="#fff" heart="#ff8f87" />{/if}
 		<span class="zl-chip">관리자</span>
 	</div>
 
@@ -167,6 +170,11 @@
 		align-items: center;
 		gap: 12px;
 		margin-bottom: 28px;
+	}
+	.zl-logo {
+		max-width: 220px;
+		max-height: 48px;
+		object-fit: contain;
 	}
 	.zl-chip {
 		padding: 4px 10px;

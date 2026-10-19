@@ -624,11 +624,29 @@ func renderSeo(ctx context.Context, c *web.Ctx, conn *sql.Conn, rawP, p string, 
 	}
 	s.cid = hostingID
 	s.baseVer = sitepub.Version(sitepub.PublicBase(s.model.Map("base")))
+	adminHosts := c.AdminHostsFor(host)
+	// 관리자 주소 — 탭 아이콘·로고는 「관리자 페이지」 설정(SITE.favicon·SITE.logo). 로그인 전 화면(로그인)은 설정을 못 읽어 문서에 싣는다(2026-10-19)
+	adminLogo := ""
+	if adminHosts != nil {
+		if n := orStr(siteMeta.Map("favicon").V("name")); n != "" {
+			s.favicon = cdn + hostingID + "/site/" + n
+		}
+		if lg := siteMeta.Map("logo"); orStr(lg.V("name")) != "" {
+			hid := orStr(lg.V("hostingId"))
+			if hid == "" {
+				hid = hostingID
+			}
+			adminLogo = cdn + hid + "/site/" + orStr(lg.V("name"))
+		}
+	}
 	parts := buildDoc(s, globalHTML, "", "", globalHTMLBodyTop)
 	// 관리자 주소 목록(SITE 설정 domains — 화면 주소 검사·대표 관리자 주소·단독 앱 주소) — 관리자 주소로 온 문서에만(사용자 화면 소스에 관리자 주소를 싣지 않는다)
 	//   zbd:host-realm = 이 주소가 관리자(admin)·사용자(user) 어느 쪽인가 — 화면이 맞지 않는 묶음을 그리지 않는다. 개발 한 주소(localhost)는 싣지 않는다(검사 끔)
-	if ah := c.AdminHostsFor(host); ah != nil {
+	if ah := adminHosts; ah != nil {
 		parts.data += `<meta name="zbd:host-realm" content="admin">` + "\n" + `<meta name="zbd:admin-hosts" content="` + escAttr(strings.Join(ah, ",")) + `">` + "\n"
+		if adminLogo != "" {
+			parts.data += `<meta name="zbd:admin-logo" content="` + escAttr(adminLogo) + `">` + "\n"
+		}
 	} else if !web.IsLocalHost(host) {
 		parts.data += `<meta name="zbd:host-realm" content="user">` + "\n"
 		// 디자인 미리보기 창만 — 관리자 편집 화면이 보내는 내용을 받으려면 관리자 주소를 알아야 한다(다른 사용자 화면에는 싣지 않는다)

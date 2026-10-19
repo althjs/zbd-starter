@@ -82,6 +82,9 @@ export const ADMIN_HOSTS: string[] = metaContent('zbd:admin-hosts')
 	.map((s) => s.trim())
 	.filter(Boolean);
 
+/** 관리자 로고 주소(「관리자 페이지」 설정 SITE.logo — 관리자 주소의 문서에만 온다 `<meta name="zbd:admin-logo">`). 로그인 전 화면용 — 없으면 '' */
+export const ADMIN_LOGO: string = metaContent('zbd:admin-logo');
+
 /** 한 주소 개발 — run_dev(localhost·내부망 IP·외부 접속 주소 터널 *.zbd.co.kr). 서버가 주소 구분(zbd:host-realm)을 싣지 않아 사용자·관리자 화면이 같은 출처에 있다 */
 export const SINGLE_ORIGIN = HOST_REALM == '';
 /** 사용자 사이트 주소(끝 /) — 넘긴 설정 주소(SITE homepage·도메인 설정). 한 주소 개발이면 늘 지금 출처
