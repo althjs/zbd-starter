@@ -6,7 +6,7 @@
 	 *    → 새 창 `?install=1`(설치 창은 그 주소에서만 뜬다 — 그 앱이 설치 안내를 연다)
 	 * 이미 설치한 앱은 숨긴다 — 앱이 설치 창으로 열릴 때 남기는 표시(app-installed.ts). 다 깔았거나 설치할 것이 없으면 카드 자체가 없다.
 	 */
-	import { SINGLE_APP, SINGLE_APPS } from '../config.ts';
+	import { ADMIN_APP_NAME, SINGLE_APP, SINGLE_APPS } from '../config.ts';
 	import { checkAuth } from '../profile.svelte.ts';
 	import { installedApps, isStandalone, markInstalled } from '../app-installed.ts';
 	import Icon from '../ui/Icon.svelte';
@@ -43,7 +43,7 @@
 		if (!SINGLE_APP && !isStandalone() && prompt && !installed.includes('admin'))
 			out.push({
 				key: 'admin',
-				name: '관리자 앱',
+				name: ADMIN_APP_NAME,
 				...APPS.admin,
 				run: async () => {
 					const e = prompt;

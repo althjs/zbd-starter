@@ -49,6 +49,8 @@ function appName(key: string, base: string): string {
 		return base;
 	}
 }
+/** 관리자 앱 이름(대시보드 「웹앱 설치」 등) — 「설치 앱 이름」 의 관리자 앱 값, 없으면 기본 */
+export const ADMIN_APP_NAME = appName('PWA_MANIFEST_ADMIN', '관리자 앱');
 const CHAT_HOST = appHost('chat.');
 const MAIL_HOST = appHost('mail.');
 const OFFICE_HOST = appHost('office.');
