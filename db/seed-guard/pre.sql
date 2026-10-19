@@ -19,3 +19,12 @@ CREATE TABLE IF NOT EXISTS seed_files (
 	name VARBINARY(150) NOT NULL PRIMARY KEY COMMENT 'db/seed 파일 이름(.sql 뺌)',
 	createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '넣어 본 기본 데이터 파일(처음 보는 파일은 지운 메뉴 기억을 무시)';
+-- 메뉴 번호가 겹쳐 옮겨 넣은 플러그인 메뉴(merge.sql) — 파일·원래 번호 → 이 사이트의 번호(2026-10-19)
+CREATE TABLE IF NOT EXISTS seed_menu_ids (
+	file VARBINARY(150) NOT NULL COMMENT 'db/seed 파일 이름(.sql 뺌)',
+	hostingId VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+	seedId INT NOT NULL COMMENT '파일에 적힌 메뉴 번호',
+	menuId INT NOT NULL COMMENT '이 사이트에 넣은 번호',
+	createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	PRIMARY KEY (file, hostingId, seedId)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '번호가 겹쳐 옮겨 넣은 기본 데이터 메뉴';

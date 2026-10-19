@@ -15,7 +15,16 @@ for f in "$S"/*.sql; do
 	echo "INSERT IGNORE INTO seed_files (name) SELECT '$n' FROM DUAL WHERE @seed_files_first;"
 	echo "SET @seed_file := '$n';"
 	cat "$G/snap.sql"
-	cat "$f"
+	# 메뉴·권한·API 를 「INSERT IGNORE」 로만 넣는 파일(플러그인 메뉴)은 임시 표로 받아 번호를 맞춰 넣는다(merge.sql — 번호가 겹치면 옮김).
+	# 메뉴 표를 읽거나 고치는 파일(기본 데이터 0001 등)은 예전처럼 그대로.
+	if grep -qiE "(UPDATE|DELETE FROM|JOIN|FROM|REPLACE INTO|INSERT INTO) +admin_(menus|role_menus)\b|(UPDATE|DELETE FROM|JOIN|REPLACE INTO|INSERT INTO) +admin_menu_apis\b" "$f"; then
+		cat "$f"
+	else
+		cat "$G/in.sql"
+		sed -e 's/admin_menu_apis/seed_in_apis/g' -e 's/admin_role_menus/seed_in_roles/g' -e 's/admin_menus/seed_in_menus/g' "$f"
+		echo
+		cat "$G/merge.sql"
+	fi
 	echo
 	cat "$G/post.sql"
 done
