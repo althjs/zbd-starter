@@ -3,7 +3,7 @@
  * 저장은 불러온 내용의 지문(baseHash) 과 같이 — 그사이 다른 곳에서 바뀌었으면 서버가 code 4090 + 지금 내용으로 거절한다.
  */
 import { api } from '#lib/shared/api.ts';
-import type { FILE_NODE } from '#lib/shared/types/file.ts';
+import type { FILE_NODE, WEBHARD_ACL_INFO, WEBHARD_ACL_RULE } from '#lib/shared/types/file.ts';
 
 const base = (root: string) => `/service/admin/file-explorer/${encodeURIComponent(root)}`;
 const q = (filePath: string) => `?filePath=${encodeURIComponent(filePath)}`;
@@ -48,3 +48,8 @@ export function uploadFiles(root: string, folderPath: string, files: File[]) {
 	files.forEach((f) => fd.append('files[]', f));
 	return api.post(`${base(root)}/upload?folderPath=${encodeURIComponent(folderPath || '')}`, fd);
 }
+/** 폴더·파일 권한 — 스타터 기본은 권한이 없어 늘 읽기·쓰기(「업무 웹하드」 플러그인이 이 파일을 서버에 묻는 판으로 바꾼다) */
+export async function getAcl(_root: string, _path = ''): Promise<WEBHARD_ACL_INFO> {
+	return { canEdit: false, access: 'RW', hide: false };
+}
+export const putAcl = async (_root: string, _path: string, _rule: WEBHARD_ACL_RULE | null) => ({ ok: false });
