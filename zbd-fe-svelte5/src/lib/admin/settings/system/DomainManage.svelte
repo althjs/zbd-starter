@@ -6,6 +6,7 @@
 	 */
 	import { onMount } from 'svelte';
 	import { api } from '#lib/shared/api.ts';
+	import { adminCookieParent } from '#lib/shared/config.ts';
 	import AuthButton from '../../ui/AuthButton.svelte';
 	import TagInput from '../../ui/TagInput.svelte';
 	import { alert, confirm, toast } from '../../ui/modal.svelte.ts';
@@ -55,11 +56,14 @@
 	// 관리자 쿠키 범위 — 서버(web/session.go cookieScope)와 같은 규칙: 사용자 쿠키 범위 안의 주소면 그 범위를 같이 쓰고,
 	// 밖이면 그 주소 전용(Domain 없음), 개발 주소(localhost 등)는 쿠키 없이 헤더 토큰
 	const isLocal = (h: string) => /^(localhost|127\.|\[::1\])/.test(h) || h.split(':')[0].endsWith('.localhost');
-	function adminCookieScope(h: string, cookieHost: string) {
+	function adminCookieScope(h: string, cookieHost: string, admins: string[]) {
 		const host = h.split(':')[0];
 		const d = cookieHost.replace(/^\./, '');
 		if (d && (host == d || host.endsWith('.' + d))) return `${h} → .${d}(사용자와 같은 범위)`;
 		if (isLocal(host)) return `${h} → 없음(개발 주소 — 쿠키 없이 로그인)`;
+		const p = adminCookieParent(host, admins);
+		if (p && p != host) return `${h} → .${p}(관리자 ${p} 와 같은 범위)`;
+		if (p && admins.some((x) => x.split(':')[0] != p && x.split(':')[0].endsWith('.' + p))) return `${h} → .${p}(아래 앱 주소와 같은 범위)`;
 		return `${h} → 이 주소 전용`;
 	}
 	const TIPS = {
@@ -95,7 +99,7 @@
 					<dd>{saved.cookieHost || '없음(개발 주소 — 쿠키 없이 로그인)'}</dd>
 					<dt>관리자 쿠키 범위</dt>
 					<dd>
-						{#each saved.admin || [] as h (h)}<div>{adminCookieScope(h, saved.cookieHost || '')}</div>{:else}-{/each}
+						{#each saved.admin || [] as h (h)}<div>{adminCookieScope(h, saved.cookieHost || '', saved.admin || [])}</div>{:else}-{/each}
 					</dd>
 					<dt>사이트맵</dt>
 					<dd>{saved.homepage ? `${saved.homepage}sitemap.xml` : '-'}</dd>

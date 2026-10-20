@@ -65,12 +65,17 @@ func (c *Ctx) domainFor(h string) string {
 		if m == nil {
 			continue
 		}
-		d := strings.TrimPrefix(strings.ToLower(strings.TrimSpace(jsx.StrOrEmpty(c.App.Settings.Site(jsx.StrOrEmpty(m.V("hostingId"))).V("cookieHost")))), ".")
+		site := c.App.Settings.Site(jsx.StrOrEmpty(m.V("hostingId")))
+		// 주소 목록(domains)이 있으면 거기서 계산 — 저장된 cookieHost 는 그 계산이 바뀌기 전 값일 수 있다(domains.go CookieHost)
+		d := strings.TrimPrefix(SiteDomains(site, c.App.Cfg.Get("ADMIN_HOSTS")).CookieHost(), ".")
+		if site == nil || site.Map("domains") == nil {
+			d = strings.TrimPrefix(strings.ToLower(strings.TrimSpace(jsx.StrOrEmpty(site.V("cookieHost")))), ".")
+		}
 		if d != "" && (h == d || strings.HasSuffix(h, "."+d)) {
 			return d
 		}
 	}
-	return ""
+	return AdminCookieParent(h, c.AdminHostsFor(h))
 }
 
 // cookieHostOK — 이 요청 주소에서 세션 쿠키를 쓸 수 있는가
@@ -269,9 +274,19 @@ func (c *Ctx) ClearSession() {
 	if c.adminRealm() {
 		name, mark = AdminSessionCookie, adminMarkCookie
 	}
-	tail := "=" + c.cookieAttr() + "; Path=/; Max-Age=0; Secure; SameSite=Lax"
-	c.W.Header().Add("Set-Cookie", name+tail+"; HttpOnly")
-	c.W.Header().Add("Set-Cookie", mark+tail)
+	// 지금 범위 + 그 주소 전용 + 이 주소의 상위들 — 쿠키 범위를 넓히기 전(2026-10-20)에 심은 것도 같이 지운다(남으면 로그아웃해도 로그인 그대로)
+	attrs := []string{c.cookieAttr(), ""}
+	h := hostOnly(c.sessHost())
+	for p := h; strings.Count(p, ".") >= 1; p = p[strings.IndexByte(p, '.')+1:] {
+		if a := "; Domain=" + p; a != attrs[0] {
+			attrs = append(attrs, a)
+		}
+	}
+	for _, a := range attrs {
+		tail := "=" + a + "; Path=/; Max-Age=0; Secure; SameSite=Lax"
+		c.W.Header().Add("Set-Cookie", name+tail+"; HttpOnly")
+		c.W.Header().Add("Set-Cookie", mark+tail)
+	}
 }
 
 // PasskeyRP — 패스키(WebAuthn) 의 RP ID·출처. 요청 Origin 기준: 대표 도메인 주소면 RP = 그 도메인(zbd.kr — backyard·chat·mail 이 한 패스키를 같이 쓴다),

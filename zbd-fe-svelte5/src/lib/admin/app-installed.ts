@@ -4,7 +4,7 @@
  * 그 앱 키를 쿠키 `zbd_apps` 에 남긴다. 쿠키 범위 = 관리자·단독 앱 주소의 공통 상위 주소(admin.X·chat.X → X) — 대시보드(관리자 주소)가 읽는다.
  * 앱을 지워도 브라우저는 알려 주지 않아 표시는 남는다(180일, 앱을 열 때마다 늘어남) — 지운 뒤 다시 보이게 하려면 「다시 보기」.
  */
-import { ADMIN_HOSTS } from './config.ts';
+import { ADMIN_HOSTS, adminCookieParent } from '#lib/shared/config.ts';
 import { getCookie, setCookie } from '#lib/shared/cookie.ts';
 
 const NAME = 'zbd_apps';
@@ -21,7 +21,7 @@ export function appCookieDomain(hosts: string[], here: string): string {
 }
 
 function domain() {
-	return typeof location == 'undefined' ? '' : appCookieDomain(ADMIN_HOSTS, location.hostname);
+	return typeof location == 'undefined' ? '' : adminCookieParent(location.hostname, ADMIN_HOSTS) || appCookieDomain(ADMIN_HOSTS, location.hostname);
 }
 
 export function installedApps(): string[] {

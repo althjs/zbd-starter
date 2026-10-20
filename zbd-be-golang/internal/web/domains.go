@@ -128,6 +128,23 @@ func (d Domains) CookieHost() string {
 	return "." + hostOnly(d.User[0])
 }
 
+// AdminCookieParent — 사용자 쿠키 범위 밖의 관리자 주소가 쓸 쿠키 범위: 관리자 목록(순서대로)에서 이 주소이거나 이 주소의 상위인 첫 주소.
+// 단독 앱 주소를 관리자 주소 아래에 두면(chat.admin.example.com) 관리자·앱이 한 로그인을 같이 쓴다(2026-10-20 오토카지 — 예전엔 주소마다 전용 쿠키라
+// 앱마다 다시 로그인했다). 해당 없으면 ""(그 주소 전용). 화면 config.ts cookieHostHere 와 같은 규칙.
+func AdminCookieParent(h string, admins []string) string {
+	h = hostOnly(h)
+	for _, a := range admins {
+		a = hostOnly(a)
+		if a == "" || IsLocalHost(a) {
+			continue
+		}
+		if h == a || strings.HasSuffix(h, "."+a) {
+			return a
+		}
+	}
+	return ""
+}
+
 // ValidateDomains — 저장 전에 검사. current = 지금 이 화면을 연 주소(그 주소를 관리자 목록에서 빼면 잠긴다)
 func ValidateDomains(d Domains, current string) error {
 	if len(d.User) == 0 {

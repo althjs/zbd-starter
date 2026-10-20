@@ -99,3 +99,20 @@ func TestIsLocalHostPolicy(t *testing.T) {
 		}
 	}
 }
+
+// 사용자 범위 밖 관리자 주소 — 그 아래 단독 앱 주소가 관리자 쿠키를 같이 쓴다(2026-10-20 오토카지)
+func TestAdminCookieParent(t *testing.T) {
+	admins := []string{"admin.b2b.example.co.kr", "office.admin.b2b.example.co.kr", "chat.admin.b2b.example.co.kr", "localhost:5000"}
+	for h, want := range map[string]string{
+		"admin.b2b.example.co.kr":        "admin.b2b.example.co.kr",
+		"chat.admin.b2b.example.co.kr":   "admin.b2b.example.co.kr",
+		"office.admin.b2b.example.co.kr": "admin.b2b.example.co.kr",
+		"chat.user.b2b.example.co.kr":    "",
+		"evil-admin.b2b.example.co.kr":   "",
+		"localhost":                      "",
+	} {
+		if got := AdminCookieParent(h, admins); got != want {
+			t.Errorf("%s: %q, 기대 %q", h, got, want)
+		}
+	}
+}

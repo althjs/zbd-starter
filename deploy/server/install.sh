@@ -342,10 +342,18 @@ else
 	ADMINS="$(printf '%s' "${ADMIN:-admin.$DOMAIN}" | tr ',' ' ')"
 	NEW_INIT=1
 fi
-# 플러그인이 필요로 하는 단독 앱 주소(chat.<대표 주소> 등) — 없으면 더한다
+# 플러그인이 필요로 하는 단독 앱 주소 — 없으면 더한다. 앞에 붙일 주소 = 대표 관리자 주소가 사용자 주소 아래면 사용자 주소(chat.example.com),
+# 밖이면 대표 관리자 주소(chat.admin.example.com — 관리자 로그인 쿠키를 같이 쓴다, 2026-10-20 오토카지: chat.user.… 는 관리자 admin.… 와 로그인이 안 이어졌다).
+# 밖인데 예전 자리(chat.<사용자 주소>)가 있으면 새 자리로 옮긴다(DNS 에 새 이름이 있어야 인증서가 나온다)
 ADD=0
+A1="${ADMINS%% *}"
+APP_BASE="$DOMAIN"
+case "$A1" in "$DOMAIN" | *".$DOMAIN") ;; *) APP_BASE="$A1" ;; esac
 for a in $ADMIN_APPS; do
-	h="$a.$DOMAIN"
+	h="$a.$APP_BASE"
+	if [ "$APP_BASE" != "$DOMAIN" ]; then
+		case " $ADMINS " in *" $a.$DOMAIN "*) ADMINS="$(printf ' %s ' "$ADMINS" | sed "s/ $a\.$DOMAIN / /; s/^ *//; s/ *$//")"; ADD=1; echo "  · 관리자 주소 옮김: $a.$DOMAIN → $h(관리자 로그인을 같이 쓰게)" ;; esac
+	fi
 	case " $ADMINS " in *" $h "*) ;; *) ADMINS="$ADMINS $h"; ADD=1; echo "  · 관리자 주소 더함: $h(플러그인)" ;; esac
 done
 ADMIN1="${ADMINS%% *}" # 대표 관리자 주소

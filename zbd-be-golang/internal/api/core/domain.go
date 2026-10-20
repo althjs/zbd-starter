@@ -143,9 +143,20 @@ func socketDomains(c *web.Ctx) {
 			continue
 		}
 		d := web.SiteDomains(c.App.Settings.Site(jsx.StrOrEmpty(m.V("hostingId"))), c.App.Cfg.Get("ADMIN_HOSTS"))
-		if ch := strings.TrimPrefix(d.CookieHost(), "."); ch != "" && !seen[ch] {
+		ch := strings.TrimPrefix(d.CookieHost(), ".")
+		if ch != "" && !seen[ch] {
 			seen[ch] = true
 			cookie = append(cookie, ch)
+		}
+		// 사용자 범위 밖 관리자 주소의 쿠키 범위(web.AdminCookieParent — chat.admin.example.com 이 admin.example.com 쿠키를 같이 쓴다)
+		for _, h := range d.AdminOnly() {
+			if ch != "" && (h == ch || strings.HasSuffix(h, "."+ch)) {
+				continue
+			}
+			if p := web.AdminCookieParent(h, d.AdminOnly()); p != "" && !seen[p] {
+				seen[p] = true
+				cookie = append(cookie, p)
+			}
 		}
 	}
 	c.Scb(jsx.Obj("admin", strList(c.AdminHostsAll()), "cookie", cookie))

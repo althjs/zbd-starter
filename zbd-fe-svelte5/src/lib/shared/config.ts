@@ -37,7 +37,20 @@ function cookieHostHere(): string {
 	const root = v.replace(/^\./, '');
 	const host = location.hostname;
 	if (!v && TUNNEL_BASE) return '.' + TUNNEL_BASE;
-	return root && (host == root || host.endsWith('.' + root)) ? v : '';
+	if (root && (host == root || host.endsWith('.' + root))) return v;
+	// 사용자 범위 밖 관리자 주소 — 관리자 주소 아래 단독 앱(chat.admin.example.com)과 같이 쓴다(서버 web.AdminCookieParent 와 같은 규칙)
+	const p = adminCookieParent(host, (document.querySelector('meta[name="zbd:admin-hosts"]')?.getAttribute('content') || '').split(','));
+	return p ? '.' + p : '';
+}
+
+/** 관리자 목록(순서대로)에서 이 주소이거나 이 주소의 상위인 첫 주소 — 없으면 ''. 순수 함수(서버 web.AdminCookieParent 와 같다) */
+export function adminCookieParent(host: string, admins: string[]): string {
+	for (const x of admins) {
+		const a = x.trim().split(':')[0].toLowerCase();
+		if (!a || a == 'localhost' || a.endsWith('.localhost') || /^[0-9.]+$/.test(a)) continue;
+		if (host == a || host.endsWith('.' + a)) return a;
+	}
+	return '';
 }
 
 /**
