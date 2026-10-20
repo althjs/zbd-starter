@@ -5,6 +5,7 @@
 	 *   <SelectField label="상태" value={v} options={[{ value: 'plan', label: '기획' }]} onchange={(v) => …} />
 	 * 목록은 OutlinedSelect 와 같은 메뉴(고른 줄이 칸 위치에 오게). ↑↓·Enter·Esc.
 	 */
+	import { menuNav } from '#lib/shared/ui/menu-nav.ts';
 	import { tick } from 'svelte';
 	import { portal } from '#lib/shared/ui/portal.ts';
 	import { cx, type Sx } from '#lib/shared/mui/sx.ts';
@@ -67,7 +68,7 @@
 			class="MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation8 MuiPopover-paper MuiMenu-paper"
 			style="top:{pos.top}px;left:{pos.left}px;min-width:{pos.minWidth}px"
 		>
-			<ul id={listId} class="MuiList-root MuiList-padding MuiMenu-list" role="listbox" tabindex="-1">
+			<ul id={listId} class="MuiList-root MuiList-padding MuiMenu-list" role="listbox" tabindex="-1" use:menuNav>
 				{#each options as o (o.value)}
 					<li
 						class={cx('MuiButtonBase-root MuiMenuItem-root MuiMenuItem-gutters', String(o.value) === String(value ?? '') && 'Mui-selected', o.disabled && 'Mui-disabled')}
@@ -75,7 +76,6 @@
 						aria-selected={String(o.value) === String(value ?? '')}
 						tabindex="0"
 						onclick={() => !o.disabled && pick(o.value)}
-						onkeydown={(e) => e.key == 'Enter' && !o.disabled && pick(o.value)}
 					>
 						{o.label}
 					</li>

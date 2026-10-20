@@ -589,8 +589,11 @@
 		min-height: auto;
 	}
 }
-.MuiMenuItem-root:hover {
-	background-color: var(--mui-action-hover);
+/* 커서 줄(마우스 · ↑↓ — shared/ui/menu-nav.ts) — 예전 hover 는 4% 회색이라 거의 안 보였다(10-16). 글자색 기준이라 다크에서도 보인다 */
+.MuiMenuItem-root:hover,
+.MuiMenuItem-root.Mui-focusVisible {
+	background-color: color-mix(in srgb, currentColor 9%, transparent);
+	outline: none;
 }
 .MuiMenuItem-root.Mui-disabled {
 	opacity: 0.38;
@@ -598,6 +601,10 @@
 }
 .MuiMenuItem-root.Mui-selected {
 	background-color: var(--theme-color-alpha8);
+}
+.MuiMenuItem-root.Mui-selected:hover,
+.MuiMenuItem-root.Mui-selected.Mui-focusVisible {
+	background-color: var(--theme-color-alpha12);
 }
 
 /* ── 표(Table) — theme MuiTable·MuiTableCell·MuiTableHead ─────────── */

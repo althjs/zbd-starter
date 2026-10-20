@@ -3,6 +3,7 @@
 	 * MUI Select(outlined) 호환 — 누르면 목록(Menu) 이 body 에 뜬다. DOM·클래스는 MUI 와 같게(운영자 CSS 가 `.MuiOutlinedInput-root` 등을 겨냥).
 	 * 목록 위치: 고른 항목이 상자 위에 겹치게(MUI 와 같은 방식).
 	 */
+	import { menuNav } from '../ui/menu-nav';
 	import { tick, type Snippet } from 'svelte';
 	import { portal } from '../ui/portal';
 	import { cx, sx as toClass, type Sx } from './sx';
@@ -79,7 +80,7 @@
 			class="MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation8 MuiPopover-paper MuiMenu-paper"
 			style="top:{pos.top}px;left:{pos.left}px;min-width:{pos.minWidth}px"
 		>
-			<ul class="MuiList-root MuiList-padding MuiMenu-list" role="listbox" tabindex="-1">
+			<ul class="MuiList-root MuiList-padding MuiMenu-list" role="listbox" tabindex="-1" use:menuNav>
 				{#each options as o (o.value)}
 					<li
 						class="MuiButtonBase-root MuiMenuItem-root MuiMenuItem-gutters{o.value === value ? ' Mui-selected' : ''}{o.disabled ? ' Mui-disabled' : ''}"
@@ -88,7 +89,6 @@
 						aria-disabled={o.disabled || undefined}
 						tabindex={o.disabled ? -1 : 0}
 						onclick={() => !o.disabled && pick(o.value)}
-						onkeydown={(e) => e.key == 'Enter' && !o.disabled && pick(o.value)}
 					>
 						{#if optionIcon}{@render optionIcon(o)}{/if}{o.label}{#if o.caption}<span class="MuiTypography-root MuiTypography-caption" style="margin-left:8px;color:var(--zbd-gray-700, #6c737f)"
 								>{o.caption}</span

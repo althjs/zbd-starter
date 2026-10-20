@@ -7,6 +7,7 @@
 	 * labelStyle="common" 은 React components/common/Select 의 isLabeled 모양(높이 46.73 · 값 위 17 아래 2).
 	 * variant="standard" 면 밑줄 상자(MUI Select variant=standard).
 	 */
+	import { menuNav } from '#lib/shared/ui/menu-nav.ts';
 	import { tick, type Snippet } from 'svelte';
 	import '../settings.css';
 	import { cx, sx as toClass, type Sx } from '#lib/shared/mui/sx.ts';
@@ -119,7 +120,7 @@
 			class="MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation8 MuiPopover-paper MuiMenu-paper"
 			style="top:{pos.top}px;left:{pos.left}px;min-width:{pos.minWidth}px"
 		>
-			<ul id={listId} class="MuiList-root MuiList-padding MuiMenu-list" role="listbox" tabindex="-1">
+			<ul id={listId} class="MuiList-root MuiList-padding MuiMenu-list" role="listbox" tabindex="-1" use:menuNav>
 				{#each options as o (o.value)}
 					<li
 						class={cx('MuiButtonBase-root MuiMenuItem-root MuiMenuItem-gutters', String(o.value) === String(value ?? '') && 'Mui-selected', o.disabled && 'Mui-disabled')}
@@ -127,7 +128,6 @@
 						aria-selected={String(o.value) === String(value ?? '')}
 						tabindex="0"
 						onclick={() => !o.disabled && pick(o.value)}
-						onkeydown={(e) => e.key == 'Enter' && !o.disabled && pick(o.value)}
 					>
 						{#if item}{@render item(o)}{:else}{o.label}{/if}
 					</li>
