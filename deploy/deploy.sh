@@ -4,8 +4,15 @@
 #   ./deploy/deploy.sh <ssh 대상> --domain example.com [--admin admin.example.com] [--name zbd-starter] [--port ssh포트] [--ssl 이메일]   처음 한 번
 #   ./deploy/deploy.sh                      두 번째부터는 deploy/deploy.conf 에 남긴 값으로(주소는 서버 DB 의 도메인 설정을 쓴다)
 #   ./deploy/deploy.sh --rollback           서버의 앞 판으로 되돌리기(빌드·올리기 없이 몇 초 — DB 는 그대로). 새 판이 뜨지 않으면 배포가 알아서 되돌린다
+#   ./deploy/deploy.sh --with-db            서버 DB 를 이 컴퓨터 개발 DB 로 바꾼다(서버 DB 는 먼저 백업 · 주소 설정은 서버 값 유지) — 이번 한 번만
+#
+# DB(2026-10-20): **처음 배포**(서버에 이 사이트가 없을 때)는 이 컴퓨터 개발 DB 를 통째로 떠서 서버 DB 로 넣는다 — 개발한 회원·글·메뉴·디자인·설정이 그대로.
+#   DB 이름·계정·비밀번호는 서버 것(개발용 계정을 운영에 쓰지 않는다), 주소 설정만 --domain·--admin 으로. 빼려면 --no-db(빈 스타터로 시작).
+#   그 뒤 배포는 DB 를 건드리지 않는다(운영 데이터가 원본) — 다시 개발 DB 로 덮어야 하면 --with-db.
 #
 # 기본으로 맞추는 것(2026-10-08): 암호화 키 = 이 컴퓨터 .env.local 과 같게(--server-keys 로 끔) · 개발에서 올린 파일 → 서버(새 것만, 지우지 않음 — --no-files 로 끔)
+#   · 그 밖의 설정(2026-10-20) = .env.local 에 직접 넣은 값(소셜 로그인·결제·문자·AI 키 등)을 서버 .env 에도 같은 값으로 — 서버가 정하는 값
+#     (포트·DB·폴더·쿠키 이름·소켓·nginx·메일 서버·개발 전용 MAIL_DEV_LOG)과 localhost 를 가리키는 값은 빼고 보낸다. --server-env 로 끔(남음, 되돌리기 --dev-env)
 # 하는 일: 서버 CPU 확인 → 서버 프로그램(Go)·소켓 서버(웹소켓 플러그인이 있으면)·화면(Svelte)을 리눅스용으로 빌드 →
 #          꾸러미 하나로 올림 → 서버에서 deploy/server/install.sh(nginx·MariaDB·설정·DB·첫 관리자·systemd·nginx 연결·확인)
 # 주소의 원본 = 서버 DB 의 도메인 설정(관리자 「환경 설정 › 도메인」 — 사용자 주소·관리자 주소). --domain·--admin(기본 admin.<도메인>, 쉼표로 여럿)은
@@ -14,7 +21,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CONF="$ROOT/deploy/deploy.conf"
-HOST="" PORT="" DOMAIN="" ADMIN="" NAME="" OUT="" ARCH="" SSL="" ADMIN_APPS="" KEYS="" FILES="" ROLLBACK=0
+HOST="" PORT="" DOMAIN="" ADMIN="" NAME="" OUT="" ARCH="" SSL="" ADMIN_APPS="" KEYS="" FILES="" ENVS="" ROLLBACK=0 DBMODE=""
 [ -f "$CONF" ] && . "$CONF"
 while [ $# -gt 0 ]; do
 	case "$1" in
@@ -25,11 +32,15 @@ while [ $# -gt 0 ]; do
 		--ssl) SSL="$2"; shift 2 ;;     # HTTPS — Let's Encrypt 만료 안내 이메일(두 주소 인증서·443·자동 갱신). 한 번 주면 deploy.conf 에 남는다
 		--server-keys) KEYS=server; shift ;; # 서버 키를 따로 둔다(개발 컴퓨터 키로 맞추지 않음). 한 번 주면 deploy.conf 에 남는다 — 되돌리기 --dev-keys
 		--dev-keys) KEYS=""; shift ;;
+		--server-env) ENVS=server; shift ;; # .env.local 설정을 서버로 보내지 않는다(서버 .env 따로). 남는다 — 되돌리기 --dev-env
+		--dev-env) ENVS=""; shift ;;
 		--no-files) FILES=0; shift ;;        # 개발에서 올린 파일을 보내지 않는다. 한 번 주면 남는다 — 되돌리기 --files
 		--files) FILES=""; shift ;;
 		--out) OUT="$2"; shift 2 ;;     # 꾸러미만 만들어 이 파일로(서버에 접속하지 않는다 — 손으로 올릴 때·시험)
 		--arch) ARCH="$2"; shift 2 ;;   # --out 과 함께: amd64(기본) · arm64
 		--rollback) ROLLBACK=1; shift ;; # 앞 판으로 되돌리기
+		--with-db) DBMODE=replace; shift ;; # 서버 DB 를 개발 DB 로 바꾼다(백업 뒤) — 남지 않는다
+		--no-db) DBMODE=0; shift ;;          # 처음 배포여도 개발 DB 를 보내지 않는다 — 남지 않는다
 		-*) echo "✗ 모르는 옵션: $1"; exit 1 ;;
 		*) [ -z "${ARG_HOST:-}" ] || { echo "✗ 서버(ssh 대상)는 하나만 넣습니다: $ARG_HOST 와 $1 — 이메일이면 앞에 --ssl 을 붙이세요(--ssl $1)"; exit 1; }
 			ARG_HOST="$1"; HOST="$1"; shift ;;
@@ -61,7 +72,7 @@ if [ -n "$OUT" ]; then M="${ARCH:-amd64}"; else
 	say "서버 확인 ($HOST)"
 	M="$(ssh ${SSH_P[@]+"${SSH_P[@]}"} -o ConnectTimeout=15 "$HOST" uname -m)" || { echo "✗ 서버($HOST)에 ssh 로 접속하지 못했습니다 — 주소·계정·ssh 키·포트(22 가 아니면 --port 번호)를 확인하세요(설정은 저장하지 않았습니다)"; exit 1; }
 	# 접속이 된 값만 다음 배포용으로 남긴다(틀린 값이 deploy.conf 에 남지 않게)
-	printf 'HOST=%q\nPORT=%q\nDOMAIN=%q\nADMIN=%q\nNAME=%q\nSSL=%q\nKEYS=%q\nFILES=%q\n' "$HOST" "$PORT" "$DOMAIN" "$ADMIN" "$NAME" "$SSL" "$KEYS" "$FILES" >"$CONF"
+	printf 'HOST=%q\nPORT=%q\nDOMAIN=%q\nADMIN=%q\nNAME=%q\nSSL=%q\nKEYS=%q\nFILES=%q\nENVS=%q\n' "$HOST" "$PORT" "$DOMAIN" "$ADMIN" "$NAME" "$SSL" "$KEYS" "$FILES" "$ENVS" >"$CONF"
 fi
 case "$M" in x86_64|amd64) ARCH=amd64 ;; aarch64|arm64) ARCH=arm64 ;; *) echo "✗ 지원하지 않는 CPU: $M"; exit 1 ;; esac
 echo "  linux/$ARCH · 이름 $NAME${DOMAIN:+ · 처음 설치 주소 $DOMAIN · $ADMIN}"
@@ -96,6 +107,50 @@ if [ "$KEYS" != server ] && [ -z "$OUT" ] && [ -f "$ROOT/zbd-be-golang/.env.loca
 		v="$(envlocal "$k")"; [ -z "$v" ] || printf '%s=%s\n' "$k" "$v"
 	done >"$PKG/dev-keys")
 fi
+# 그 밖의 설정 → 서버 .env(같은 이름은 개발 값으로 바꾸고, 서버에만 있는 줄은 둔다). 꾸러미만 만들 때(--out)는 넣지 않는다
+SERVER_OWNED='PORT FE_PORT SOCK_PORT DB_HOST DB_PORT DB_NAME DB_USER DB_PASSWORD DB_CHARSET DB_CONN_LIMIT CDN_UPLOAD_DIR FE_INDEX_HTML RUN_JOBS DATA_PATH
+ MAIL_DEV_LOG ADMIN_HOSTS AUTH_COOKIE_KEY AUTH_COOKIE_KEY_USER SOCKET_URL SOCKET_SECRET ADMIN_SOCKET_SECRET READY_SOCKET_SECRET SYSTEM_MONITOR_SERVICES
+ SYSTEM_MONITOR_READONLY E2E_UPLOAD_SECRET AES_256_ENCRYPTION_KEY AES_256_ENCRYPTION_IV PII_ENC_KEY_V1 PII_INDEX_KEY'
+if [ "$ENVS" != server ] && [ -z "$OUT" ] && [ -f "$ROOT/zbd-be-golang/.env.local" ]; then
+	SKIPPED=""
+	(umask 077 && : >"$PKG/dev-env")
+	while IFS= read -r line || [ -n "$line" ]; do
+		[[ "$line" =~ ^([A-Z][A-Z0-9_]*)=(.*)$ ]] || continue
+		k="${BASH_REMATCH[1]}" v="${BASH_REMATCH[2]}"
+		case " $(echo $SERVER_OWNED) " in *" $k "*) continue ;; esac
+		case "$k" in NGINX_* | HOSTING_* | MAIL_* | CC_* | CLAUDE_*) continue ;; esac # 서버 설치·플러그인 설치가 정하는 값
+		case "$v" in *localhost* | *127.0.0.1* | *0.0.0.0*) SKIPPED="$SKIPPED $k"; continue ;; esac
+		printf '%s=%s\n' "$k" "$v" >>"$PKG/dev-env"
+	done <"$ROOT/zbd-be-golang/.env.local"
+	[ -s "$PKG/dev-env" ] && echo "  설정 보냄(.env.local → 서버 .env): $(cut -d= -f1 "$PKG/dev-env" | tr '\n' ' ')"
+	[ -z "$SKIPPED" ] || echo "  ⚠ localhost 를 가리켜 보내지 않은 설정:$SKIPPED — 서버 .env 에 운영 값을 직접 넣으세요"
+	[ -s "$PKG/dev-env" ] || rm -f "$PKG/dev-env"
+fi
+# 개발 DB → 서버(처음 배포 · --with-db). 키가 개발 컴퓨터와 같아야 회원 정보가 풀린다 → --server-keys 면 보내지 않는다.
+#   서버 MariaDB(우분투 10.6·10.11)가 모르는 것을 바꿔 싣는다: MariaDB 11+ 정렬 규칙 uca1400 → unicode_ci · 12 의 첫 줄 sandbox 표시 · DEFINER
+SEND_DB=0
+if [ -z "$OUT" ] && [ "$DBMODE" != 0 ]; then
+	if [ "$DBMODE" = replace ]; then SEND_DB=1
+	elif ! ssh ${SSH_P[@]+"${SSH_P[@]}"} "$HOST" "test -d /srv/$NAME/releases"; then SEND_DB=1; fi
+fi
+if [ "$SEND_DB" = 1 ] && [ "$KEYS" = server ]; then
+	echo "  ⚠ --server-keys 라 개발 DB 는 보내지 않습니다(키가 달라 회원 정보를 못 읽습니다) — 서버는 빈 스타터 DB 로 시작합니다"; SEND_DB=0
+fi
+if [ "$SEND_DB" = 1 ]; then
+	DH="$(envlocal DB_HOST)" DPORT="$(envlocal DB_PORT)" DN="$(envlocal DB_NAME)" DU="$(envlocal DB_USER)"
+	DUMP="$(command -v mariadb-dump || command -v mysqldump || true)"
+	[ -n "$DN" ] && [ -n "$DU" ] || { echo "✗ 개발 DB 설정(zbd-be-golang/.env.local 의 DB_NAME·DB_USER)이 없습니다 — run_dev.sh 를 한 번 돌리거나, 빈 DB 로 배포하려면 --no-db"; exit 1; }
+	[ -n "$DUMP" ] || { echo "✗ DB 백업 도구(mariadb-dump·mysqldump)가 없습니다 — MariaDB 를 설치하거나, 빈 DB 로 배포하려면 --no-db"; exit 1; }
+	say "개발 DB 떠서 싣기($DN → 서버 DB)"
+	if ! MYSQL_PWD="$(envlocal DB_PASSWORD)" "$DUMP" -h"${DH:-127.0.0.1}" -P"${DPORT:-3306}" -u"$DU" --single-transaction --quick --skip-lock-tables \
+		--no-tablespaces --hex-blob --default-character-set=utf8mb4 "$DN" 2>"$PKG/dump.err" |
+		sed -e '1{/enable the sandbox mode/d;}' -e 's/utf8mb\([34]\)_uca1400_[a-z_]*ci/utf8mb\1_unicode_ci/g' -e 's/ DEFINER=[^ ]* / /g' |
+		gzip >"$PKG/dev-db.sql.gz"; then
+		cat "$PKG/dump.err"; echo "✗ 개발 DB 를 뜨지 못했습니다(MariaDB 가 켜져 있는지 확인) — 빈 DB 로 배포하려면 --no-db"; exit 1
+	fi
+	rm -f "$PKG/dump.err"; chmod 600 "$PKG/dev-db.sql.gz"
+	echo "  개발 DB $(du -h "$PKG/dev-db.sql.gz" | cut -f1)$( [ "$DBMODE" = replace ] && echo ' — 서버 DB 를 이것으로 바꿉니다(서버 DB 는 먼저 백업)')"
+fi
 # 관리자 단독 앱 주소(PWA 채팅·메일 플러그인) — 즈비드 호스팅(zbd hosting deploy)은 이 파일로 받는다(install.sh 는 --admin-apps)
 [ -z "${ADMIN_APPS# }" ] || printf '%s\n' "${ADMIN_APPS# }" >"$PKG/admin-apps"
 (cd "$ROOT" && git rev-parse --short HEAD 2>/dev/null || echo "-") >"$PKG/REVISION"
@@ -128,4 +183,4 @@ if [ "$FILES" != 0 ]; then
 		SYNC_ARG="--sync-from \$HOME/$R"
 	fi
 fi
-ssh ${SSH_P[@]+"${SSH_P[@]}"} -t "$HOST" "set -e; D=\$(mktemp -d); tar -xzf /tmp/$NAME-deploy.tgz -C \$D; rm -f /tmp/$NAME-deploy.tgz; sudo bash \$D/install.sh --pkg \$D --name $NAME $SYNC_ARG ${DOMAIN:+--domain $DOMAIN --admin $ADMIN}${ADMIN_APPS:+ --admin-apps \"${ADMIN_APPS# }\"}${SSL:+ --ssl $SSL}; rm -rf \$D"
+ssh ${SSH_P[@]+"${SSH_P[@]}"} -t "$HOST" "set -e; D=\$(mktemp -d); tar -xzf /tmp/$NAME-deploy.tgz -C \$D; rm -f /tmp/$NAME-deploy.tgz; sudo bash \$D/install.sh --pkg \$D --name $NAME $SYNC_ARG $( [ "$DBMODE" = replace ] && echo --replace-db ) ${DOMAIN:+--domain $DOMAIN --admin $ADMIN}${ADMIN_APPS:+ --admin-apps \"${ADMIN_APPS# }\"}${SSL:+ --ssl $SSL}; rm -rf \$D"

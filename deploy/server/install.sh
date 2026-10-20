@@ -2,6 +2,8 @@
 # 서버 설치·갱신 — deploy.sh 가 꾸러미와 함께 올려 sudo 로 실행한다(여러 번 돌려도 같다). Ubuntu 22.04·24.04.
 #   bash install.sh --pkg <꾸러미 폴더> --name zbd-starter [--domain example.com --admin admin.example.com[,…]] [--admin-apps "chat mail"]
 #   bash /srv/<이름>/install.sh --rollback --name <이름>   앞 판으로 되돌리기(zbd deploy --rollback) — DB 는 그대로
+#   꾸러미에 dev-db.sql.gz(배포한 컴퓨터의 개발 DB)가 있으면: 서버 DB 가 비었을 때(처음 설치) 그것을 넣는다 · --replace-db 면 서버 DB 를 백업하고 바꾼다.
+#     DB 이름·계정·비밀번호는 서버 .env 그대로, 주소 설정(domains·홈 주소·쿠키 범위)만 서버 값(처음이면 --domain)으로 — 2026-10-20
 #   새 판의 서버 프로그램이 뜨지 않으면(시작하자마자 죽음·응답 없음) 묻지 않고 앞 판으로 되돌린다(2026-10-11)
 #   주소의 원본 = DB 사이트 설정 domains(관리자 「환경 설정 › 도메인」 — 2026-10-06 「하나로만」). --domain·--admin 은 **처음 설치 때만** 쓴다
 #   (DB 에 주소가 이미 있으면 무시 — 화면에서 바꾼 주소를 옛 배포 설정이 덮지 않게). nginx·인증서는 DB 주소대로 맞춘다.
@@ -15,7 +17,7 @@
 #   account.txt          첫 관리자 비밀번호(600) — 처음 한 번
 # 서비스: <이름>(서버 프로그램 127.0.0.1:5001~) · <이름>-socket(소켓 서버 127.0.0.1:4006~) · nginx 사이트 <이름> — 포트는 비어 있는 것을 골라 .env 에 남긴다
 set -euo pipefail
-PKG="" NAME="zbd-starter" DOMAIN="" ADMIN="" ADMIN_APPS="" BE_PORT_ARG="" SOCK_PORT_ARG="" SSL_EMAIL="" SYNC_FROM="" ROLLBACK=0
+PKG="" NAME="zbd-starter" DOMAIN="" ADMIN="" ADMIN_APPS="" BE_PORT_ARG="" SOCK_PORT_ARG="" SSL_EMAIL="" SYNC_FROM="" ROLLBACK=0 REPLACE_DB=0
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--pkg) PKG="$2"; shift 2 ;; --name) NAME="$2"; shift 2 ;;
@@ -24,6 +26,7 @@ while [ $# -gt 0 ]; do
 		--ssl) SSL_EMAIL="$2"; shift 2 ;;
 		--sync-from) SYNC_FROM="$2"; shift 2 ;; # 개발 컴퓨터에서 올린 파일(deploy.sh 가 보낸 곳 — upload·secure·file-explorer)
 		--rollback) ROLLBACK=1; shift ;;
+		--replace-db) REPLACE_DB=1; shift ;; # 서버 DB 를 꾸러미의 개발 DB 로 바꾼다(먼저 백업)
 		*) echo "✗ 모르는 옵션: $1"; exit 1 ;;
 	esac
 done
@@ -277,6 +280,19 @@ DENY
 	sed -i -e "s|__APP__|$APP|g" -e "s|__NAME__|$NAME|g" -e "s|__OFFICE__|$(envget OFFICE_IPS | tr ',' ' ')|" "$DENY_SCRIPT.tmp"
 	install -m 755 -o root -g root "$DENY_SCRIPT.tmp" "$DENY_SCRIPT"; rm -f "$DENY_SCRIPT.tmp"
 fi
+# 배포한 컴퓨터의 설정(deploy.sh 가 dev-env 로 보냄 — 서버가 정하는 값·localhost 값은 빼고 옴): 같은 이름은 그 값으로, 없으면 더한다. 서버에만 있는 줄은 둔다
+if [ -f "$PKG/dev-env" ]; then
+	CH="$(awk -F= 'NR==FNR{k=$1; sub(/^[^=]*=/,""); v[k]=$0; next} {k=$1; sub(/^[^=]*=/,""); if(k in v){seen[k]=1; if(v[k]!=$0) print k}} END{for(k in v) if(!(k in seen)) print k}' "$PKG/dev-env" "$APP/.env" | grep -E '^[A-Z][A-Z0-9_]*$' | sort | tr '\n' ' ' || true)"
+	if [ -n "$CH" ]; then
+		install -m 600 -o root -g root "$APP/.env" "$APP/.env.bak_$(date +%Y%m%d-%H%M%S)_devenv"
+		awk -F= 'NR==FNR{if($0 ~ /^[A-Z][A-Z0-9_]*=/){k=$1; sub(/^[^=]*=/,""); v[k]=$0; o[++n]=k}; next}
+			{k=$1} ($0 ~ /^[A-Z][A-Z0-9_]*=/ && k in v){print k "=" v[k]; done[k]=1; next} {print}
+			END{for(i=1;i<=n;i++) if(!(o[i] in done)){print o[i] "=" v[o[i]]; done[o[i]]=1}}' "$PKG/dev-env" "$APP/.env" >"$APP/.env.new"
+		mv "$APP/.env.new" "$APP/.env"
+		echo "  · 설정 맞춤(개발 컴퓨터 값): $CH"
+	fi
+	rm -f "$PKG/dev-env"
+fi
 chown root:"$NAME" "$APP/.env"; chmod 640 "$APP/.env"
 
 # ─── 3. 새 판 ───────────────────────────────────────────
@@ -299,6 +315,39 @@ CREATE USER IF NOT EXISTS '$DBU'@'localhost' IDENTIFIED BY '$DBP'; CREATE USER I
 ALTER USER '$DBU'@'localhost' IDENTIFIED BY '$DBP'; ALTER USER '$DBU'@'127.0.0.1' IDENTIFIED BY '$DBP';
 GRANT ALL PRIVILEGES ON \`$DBN\`.* TO '$DBU'@'localhost'; GRANT ALL PRIVILEGES ON \`$DBN\`.* TO '$DBU'@'127.0.0.1';"
 app_sql() { MYSQL_PWD="$DBP" mariadb --default-character-set=utf8mb4 -h127.0.0.1 -u"$DBU" "$DBN" "$@"; }
+# 개발 DB 옮기기 — 회원 정보는 개발 키로 잠겨 있어 개발 키(dev-keys)가 같이 와야 넣는다. 넣은 뒤 주소 설정은 지우고(아래 「사이트 주소」 가 다시 만든다)
+#   서버 DB 를 바꿀 때는 서버 주소 설정을 먼저 떠 두었다가 되살린다
+DEVDB_LOADED=0
+if [ -f "$PKG/dev-db.sql.gz" ]; then
+	NT="$(app_sql -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE() AND table_name<>'schema_migrations'")"
+	if [ ! -f "$PKG/dev-keys" ]; then
+		echo "  ⚠ 개발 컴퓨터 키가 같이 오지 않아 개발 DB 는 넣지 않습니다(회원 정보를 못 읽습니다)"
+	elif [ "$NT" != 0 ] && [ "$REPLACE_DB" != 1 ]; then
+		echo "  · 서버 DB 에 이미 데이터가 있어 개발 DB 는 넣지 않습니다(서버 DB 를 개발 DB 로 바꾸려면: zbd deploy --with-db)"
+	else
+		SAVED_DOMS=""
+		if [ "$NT" != 0 ]; then
+			SAVED_DOMS="$(app_sql -N -e "SELECT JSON_EXTRACT(json, '\$.domains') FROM settings WHERE metaKey='SITE' AND hostingId='ZBD'" 2>/dev/null || true)"
+			[[ "$SAVED_DOMS" =~ ^[][{}\"a-zA-Z0-9.:,\ _-]+$ ]] || SAVED_DOMS=""
+			mkdir -p "$APP/backups/db"; chmod 700 "$APP/backups" "$APP/backups/db"
+			B="$APP/backups/db/$(date +%Y%m%d-%H%M%S)-before-dev-db.sql.gz"
+			say "서버 DB 백업 → $B"
+			mariadb-dump --single-transaction --default-character-set=utf8mb4 "$DBN" | gzip >"$B" || { echo "✗ 서버 DB 를 백업하지 못해 바꾸지 않았습니다"; exit 1; }
+			chmod 600 "$B"
+			mariadb -e "DROP DATABASE \`$DBN\`; CREATE DATABASE \`$DBN\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+		fi
+		say "개발 DB 넣기"
+		gunzip -c "$PKG/dev-db.sql.gz" | app_sql || { echo "✗ 개발 DB 를 넣지 못했습니다${B:+ — 되살리기: gunzip -c $B | sudo mariadb $DBN}"; exit 1; }
+		if [ -n "$SAVED_DOMS" ] && [ "$SAVED_DOMS" != NULL ]; then
+			app_sql -e "UPDATE settings SET json = JSON_SET(json, '\$.domains', JSON_EXTRACT('$SAVED_DOMS', '\$')) WHERE metaKey='SITE' AND hostingId='ZBD'"
+		else
+			app_sql -e "UPDATE settings SET json = JSON_REMOVE(json, '\$.domains') WHERE metaKey='SITE' AND hostingId='ZBD'"
+		fi
+		echo "  · 넣음: 표 $(app_sql -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE()")개 · 관리자 $(app_sql -N -e "SELECT COUNT(*) FROM admins" 2>/dev/null || echo 0)명 · 회원 $(app_sql -N -e "SELECT COUNT(*) FROM members" 2>/dev/null || echo 0)명${B:+ · 앞 서버 DB 백업 $B}"
+		DEVDB_LOADED=1
+	fi
+fi
+rm -f "$PKG/dev-db.sql.gz"
 app_sql -e "CREATE TABLE IF NOT EXISTS schema_migrations (version VARCHAR(100) NOT NULL PRIMARY KEY, appliedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP)"
 # 플러그인 빼기(zbd remove)가 남긴 DB 지우기 — 마이그레이션보다 먼저, 파일마다 한 번(schema_migrations 'remove:이름').
 #   파일 머리 「-- migrations: …」 가 하나도 적용 안 된 DB(그 플러그인을 붙인 적 없음)면 돌리지 않고 기록만 한다
@@ -359,7 +408,7 @@ done
 ADMIN1="${ADMINS%% *}" # 대표 관리자 주소
 jarr() { local o="" h; for h in "$@"; do o="$o${o:+,}'$h'"; done; printf 'JSON_ARRAY(%s)' "$o"; }
 DOMS="JSON_OBJECT('user', $(jarr $USER_HOSTS), 'admin', $(jarr $ADMINS))"
-if [ "$NEW_INIT" = 1 ]; then
+if [ "$NEW_INIT" = 1 ] || [ "$DEVDB_LOADED" = 1 ]; then # 개발 DB 를 넣었으면 홈 주소·쿠키 범위·사이트맵도 개발 값(localhost)이라 다시
 	URL="https://$DOMAIN/"
 	app_sql -e "UPDATE settings SET json = JSON_SET(json, '\$.items[0].homepage', '$URL') WHERE metaKey='HOSTINGS' AND hostingId='';
 UPDATE settings SET json = JSON_SET(json, '\$.domains', $DOMS, '\$.cookieHost', '.$DOMAIN', '\$.homepage', '$URL', '\$.design.homepage', '$URL',
@@ -381,8 +430,12 @@ if [ -f "$PKG/dev-keys" ]; then
 		say "암호화 키를 개발 컴퓨터와 맞춥니다"
 		BAK="$APP/.env.bak_$(date +%Y%m%d-%H%M%S)_keys"
 		install -m 600 -o root -g root "$APP/.env" "$BAK"
-		OUT="$(cd "$APP" && NEW_PII_ENC_KEY_V1="$NK_PE" NEW_PII_INDEX_KEY="$NK_PI" "$REL/bin/rekey" 2>&1)" || { echo "$OUT"; echo "✗ 회원 정보를 새 키로 다시 잠그지 못해 키를 바꾸지 않았습니다(서버 키 그대로) — 위 오류를 확인하세요"; exit 1; }
-		echo "  · $OUT" | sed '2,$s/^/  /'
+		if [ "$DEVDB_LOADED" = 1 ]; then
+			echo "  · 개발 DB 를 넣어 회원 정보가 이미 개발 키로 잠겨 있습니다 — 다시 잠그지 않고 키만 바꿉니다"
+		else
+			OUT="$(cd "$APP" && NEW_PII_ENC_KEY_V1="$NK_PE" NEW_PII_INDEX_KEY="$NK_PI" "$REL/bin/rekey" 2>&1)" || { echo "$OUT"; echo "✗ 회원 정보를 새 키로 다시 잠그지 못해 키를 바꾸지 않았습니다(서버 키 그대로) — 위 오류를 확인하세요"; exit 1; }
+			echo "  · $OUT" | sed '2,$s/^/  /'
+		fi
 		for kv in "AES_256_ENCRYPTION_KEY=$NK_AES" "AES_256_ENCRYPTION_IV=$NK_IV" "PII_ENC_KEY_V1=$NK_PE" "PII_INDEX_KEY=$NK_PI"; do
 			k="${kv%%=*}"; v="${kv#*=}"
 			if grep -qE "^$k=" "$APP/.env"; then sed -i "s|^$k=.*|$k=$v|" "$APP/.env"; else echo "$kv" >>"$APP/.env"; fi
@@ -694,6 +747,7 @@ fi
 echo
 if [ "$ok" = 1 ]; then echo "✓ 배포 끝 — 사이트 $SCHEME://$DOMAIN · 관리자 $SCHEME://$ADMIN1/admin"; else echo "✗ 확인 실패 — journalctl -u $NAME -n 50 · nginx -t"; fi
 [ "${FIRST_ADMIN:-}" = 1 ] && echo "  첫 관리자 계정: sudo cat $APP/account.txt (로그인 뒤 비밀번호를 바꾸고 지우세요)"
-[ "${FIRST_ADMIN:-}" = 1 ] && echo "  ※ 서버 DB 는 내 컴퓨터(run_dev)와 따로입니다 — 내 컴퓨터에서 만든 회원·글·설정은 여기 없습니다(docs/GETTING_STARTED.md 7절)"
+[ "${FIRST_ADMIN:-}" = 1 ] && echo "  ※ 개발 DB 를 옮기지 않고 빈 스타터 DB 로 시작했습니다 — 개발 DB 로 바꾸려면 zbd deploy --with-db(docs/GETTING_STARTED.md 7절)"
+[ "$DEVDB_LOADED" = 1 ] && echo "  개발 DB 를 그대로 옮겼습니다 — 관리자 로그인은 내 컴퓨터(run_dev)에서 쓰던 계정·비밀번호 그대로입니다"
 [ "$SCHEME" = http ] && echo "  HTTPS: 모든 주소의 DNS 를 이 서버로 걸고 ./deploy/deploy.sh --ssl 이메일 로 다시 배포(인증서·443·자동 갱신)"
 [ "$ok" = 1 ]
