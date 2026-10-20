@@ -38,6 +38,36 @@ function devAccount(): Plugin {
 	};
 }
 
+// 빌드 경고 「Some chunks are larger than 500 kB」 대신(2026-10-20 대표 — 오류처럼 보여서) · 그 경고에 걸리던 것은 누를 때만 받는 덩어리
+// (mermaid·elk·exceljs·관리자 다국어 단어표)라 처음 화면과 무관했다. 처음 화면에 실리는 것(시작 파일 + 정적으로 딸린 것)만 재서 넘으면 알린다.
+const FIRST_LOAD_WARN_KB = 500;
+function firstLoadSize(): Plugin {
+	return {
+		name: 'zbd-first-load-size',
+		apply: 'build',
+		applyToEnvironment: (e) => e.name === 'client',
+		generateBundle(_o, bundle) {
+			const chunks = Object.values(bundle).filter((c) => c.type === 'chunk') as any[];
+			const byName = new Map(chunks.map((c) => [c.fileName, c]));
+			const seen = new Set<string>();
+			const walk = (f: string) => {
+				if (seen.has(f)) return;
+				seen.add(f);
+				for (const i of byName.get(f)?.imports || []) walk(i);
+			};
+			for (const c of chunks) if (c.isEntry) walk(c.fileName);
+			const big = [...seen].map((f) => byName.get(f)).filter((c) => c && c.code.length > FIRST_LOAD_WARN_KB * 1024);
+			for (const c of big)
+				this.warn(
+					`처음 화면에 실리는 파일이 ${Math.round(c.code.length / 1024)}kB — ${c.fileName} (${Object.keys(c.modules)
+						.slice(-3)
+						.map((m) => m.replace(process.cwd() + '/', ''))
+						.join(', ')}) · import() 로 나눌 것`
+				);
+		}
+	};
+}
+
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), '');
 	// 개발 때 API 를 받을 곳 — 기본은 이 컴퓨터의 BE(run_dev.sh 가 띄운다). 운영 서버를 보려면 ZBD_API=https://도메인
@@ -46,10 +76,14 @@ export default defineConfig(({ mode }) => {
 	return {
 		plugins: [
 			devAccount(),
+			firstLoadSize(),
 			sveltekit({
 				compilerOptions: {
 					// Force runes mode for the project, except for libraries. Can be removed in svelte 6.
-					runes: ({ filename }) => (filename.split(/[/\\]/).includes('node_modules') ? undefined : true)
+					runes: ({ filename }) => (filename.split(/[/\\]/).includes('node_modules') ? undefined : true),
+					// 빌드 로그에서 뺄 경고(오류처럼 보여서) · 접근성(a11y_*)과 「처음 값만 읽음」(props 로 첫 값을 잡는 일부러 쓴 모양).
+					// 나머지(non_reactive_update·css_unused_selector 등 진짜 실수일 수 있는 것)는 그대로 보인다. svelte-check 에는 다 나온다.
+					warningFilter: (w) => !(w.code.startsWith('a11y_') || w.code === 'state_referenced_locally')
 				},
 				// SPA — 사용자 화면의 HTML 은 지금처럼 BE SSR(seo) 이 만들어 이 앱을 붙인다.
 				adapter: adapter({ fallback: 'index.html' }),
@@ -57,6 +91,11 @@ export default defineConfig(({ mode }) => {
 				appDir: 'assets/_app'
 			})
 		],
+		build: {
+			// 크기 경고는 firstLoadSize 가 처음 화면 것만 본다 · 플러그인 시간 표(PLUGIN_TIMINGS)는 정보일 뿐이라 끔
+			chunkSizeWarningLimit: 100000,
+			rolldownOptions: { checks: { pluginTimings: false } }
+		},
 		server: {
 			port: Number(env.FE_PORT || 5000),
 			// 기본 = 같은 네트워크의 다른 기기(휴대폰·다른 PC)에서도 http://{이 컴퓨터 IP}:5000 으로 열린다(2026-10-06). 이 컴퓨터에서만 열려면 FE_HOST=localhost
