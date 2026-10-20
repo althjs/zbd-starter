@@ -5,8 +5,10 @@
 	 *  · 단독 앱(메신저 chat. · 웹메일 mail. · 웹오피스 office. · 포토샵 photo.): 그 주소가 관리자 주소 목록에 있고 내 메뉴에 그 화면이 있을 때
 	 *    → 새 창 `?install=1`(설치 창은 그 주소에서만 뜬다 — 그 앱이 설치 안내를 연다)
 	 * 이미 설치한 앱은 숨긴다 — 앱이 설치 창으로 열릴 때 남기는 표시(app-installed.ts). 다 깔았거나 설치할 것이 없으면 카드 자체가 없다.
+	 * 아이콘 = 그 앱의 설치 정보(manifest — 「PWA 설정」 에서 등록한 아이콘)의 첫 아이콘. 못 읽거나 그림이 깨지면 기본 그림.
 	 */
 	import { ADMIN_APP_NAME, SINGLE_APP, SINGLE_APPS } from '../config.ts';
+	import { HOSTING_ID } from '#lib/shared/config.ts';
 	import { checkAuth } from '../profile.svelte.ts';
 	import { installedApps, isStandalone, markInstalled } from '../app-installed.ts';
 	import Icon from '../ui/Icon.svelte';
@@ -19,6 +21,31 @@
 		office: { desc: '문서·시트·슬라이드', icon: 'description', color: '#5b4bc4' },
 		photo: { desc: '사진 편집', icon: 'photo_filter', color: '#1b3a6b' }
 	};
+
+	// 설치 정보의 manifest 앱 키(관리자 앱은 없음)
+	const MANIFEST_APP: Record<string, string> = { admin: '', messenger: 'messenger', mail: 'mail', office: 'office', photo: 'photo' };
+	let icons = $state<Record<string, string>>({});
+	let broken = $state<Record<string, boolean>>({});
+	const asked = new Set<string>(); // 한 번만 묻는다(상태가 아니라 효과가 다시 돌지 않게)
+	function pickIcon(list: any): string {
+		if (!Array.isArray(list)) return '';
+		const ok = list.filter((i) => i?.src && i.purpose != 'maskable');
+		const near = ok.find((i) => String(i.sizes || '').includes('192')) || ok[0] || list.find((i) => i?.src);
+		return near?.src ? String(near.src) : '';
+	}
+	async function loadIcon(key: string) {
+		if (asked.has(key)) return;
+		asked.add(key);
+		try {
+			const app = MANIFEST_APP[key];
+			const r = await fetch(`/service/pwa/manifest?admin=1&${app ? 'app=' + app + '&' : ''}hostingId=${encodeURIComponent(HOSTING_ID)}`, { credentials: 'same-origin' });
+			if (!r.ok) return;
+			const src = pickIcon((await r.json())?.icons);
+			if (src) icons[key] = new URL(src, location.href).href;
+		} catch {
+			/* 기본 그림 */
+		}
+	}
 
 	let prompt = $state<any>(typeof window != 'undefined' ? (window as any).__zbdInstallPrompt || null : null);
 	let installed = $state(installedApps());
@@ -62,6 +89,9 @@
 		}
 		return out;
 	});
+	$effect(() => {
+		for (const it of items) loadIcon(it.key);
+	});
 </script>
 
 {#if items.length}
@@ -73,7 +103,11 @@
 		<div class="dash-apps-list">
 			{#each items as it (it.key)}
 				<button type="button" class="dash-app" onclick={it.run}>
-					<span class="dash-app-ic" style:background={it.color}><Icon name={it.icon} sx={{ fontSize: 22, color: '#fff' }} /></span>
+					{#if icons[it.key] && !broken[it.key]}
+						<img class="dash-app-ic dash-app-img" src={icons[it.key]} alt="" onerror={() => (broken[it.key] = true)} />
+					{:else}
+						<span class="dash-app-ic" style:background={it.color}><Icon name={it.icon} sx={{ fontSize: 22, color: '#fff' }} /></span>
+					{/if}
 					<span class="dash-app-tx"><b>{it.name}</b><small>{it.desc}</small></span>
 					<Icon name="download" sx={{ fontSize: 20, color: 'var(--zc-888, #888)' }} />
 				</button>
@@ -133,6 +167,10 @@
 		align-items: center;
 		justify-content: center;
 		flex: none;
+	}
+	.dash-app-img {
+		object-fit: cover;
+		display: block;
 	}
 	.dash-app-tx {
 		flex: 1;
