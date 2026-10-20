@@ -4,6 +4,9 @@
 #   bash /srv/<이름>/install.sh --rollback --name <이름>   앞 판으로 되돌리기(zbd deploy --rollback) — DB 는 그대로
 #   꾸러미에 dev-db.sql.gz(배포한 컴퓨터의 개발 DB)가 있으면: 서버 DB 가 비었을 때(처음 설치) 그것을 넣는다 · --replace-db 면 서버 DB 를 백업하고 바꾼다.
 #     DB 이름·계정·비밀번호는 서버 .env 그대로, 주소 설정(domains·홈 주소·쿠키 범위)만 서버 값(처음이면 --domain)으로 — 2026-10-20
+#   DB 서버(2026-10-20): .env 의 DB_HOST·DB_PORT 를 따른다 — 127.0.0.1·localhost 면 이 서버 MariaDB(DB·계정을 만든다), 아니면 **다른 DB 서버**
+#     (DB·계정은 그 서버에서 미리 만든다 — 이 스크립트는 접속만 확인, MariaDB 서버는 설치하지 않고 접속 도구만). 꾸러미에 db-conn(deploy.sh --db-host)이 있으면
+#     .env 의 DB_* 를 그 값으로 바꾼다(앞 .env 백업) — 새 DB 가 비었으면 앞 DB 를 그대로 옮기고, 주소 설정이 없거나 개발 값이면 앞 DB 의 주소를 넣는다
 #   새 판의 서버 프로그램이 뜨지 않으면(시작하자마자 죽음·응답 없음) 묻지 않고 앞 판으로 되돌린다(2026-10-11)
 #   주소의 원본 = DB 사이트 설정 domains(관리자 「환경 설정 › 도메인」 — 2026-10-06 「하나로만」). --domain·--admin 은 **처음 설치 때만** 쓴다
 #   (DB 에 주소가 이미 있으면 무시 — 화면에서 바꾼 주소를 옛 배포 설정이 덮지 않게). nginx·인증서는 DB 주소대로 맞춘다.
@@ -149,14 +152,24 @@ rnd() { local s; s="$(head -c 96 /dev/urandom | base64 | tr -dc 'A-Za-z0-9')"; p
 b64() { head -c 32 /dev/urandom | base64 | tr -d '\n'; }
 HAS_SOCK=0; [ -x "$PKG/bin/zbd-socket" ] && HAS_SOCK=1
 
+# DB 서버 — 꾸러미의 db-conn(이번에 바꿀 값) → 지금 .env → 이 서버. 다른 서버면 MariaDB 서버를 설치·켜지 않는다
+connget() { [ -f "$PKG/db-conn" ] && grep -E "^$1=" "$PKG/db-conn" | tail -1 | cut -d= -f2- || true; }
+DB_HOST_NEXT="$(connget DB_HOST)"; [ -n "$DB_HOST_NEXT" ] || DB_HOST_NEXT="$(old_env DB_HOST)"
+case "${DB_HOST_NEXT:-127.0.0.1}" in 127.0.0.1 | localhost) DB_REMOTE=0 ;; *) DB_REMOTE=1 ;; esac
+
 # ─── 1. 프로그램 ─────────────────────────────────────────
 if ! command -v nginx >/dev/null || ! command -v mariadb >/dev/null; then
-	say "nginx · MariaDB 설치(apt)"
 	export DEBIAN_FRONTEND=noninteractive
 	apt-get update -qq
-	apt-get install -y -qq nginx mariadb-server curl >/dev/null
+	if [ "$DB_REMOTE" = 1 ]; then
+		say "nginx · MariaDB 접속 도구 설치(apt — DB 는 다른 서버 $DB_HOST_NEXT)"
+		apt-get install -y -qq nginx mariadb-client curl >/dev/null
+	else
+		say "nginx · MariaDB 설치(apt)"
+		apt-get install -y -qq nginx mariadb-server curl >/dev/null
+	fi
 fi
-systemctl enable --now mariadb >/dev/null 2>&1 || true
+[ "$DB_REMOTE" = 1 ] || systemctl enable --now mariadb >/dev/null 2>&1 || true
 systemctl enable --now nginx >/dev/null 2>&1 || true
 id -u "$NAME" >/dev/null 2>&1 || useradd --system --home-dir "$APP" --shell /usr/sbin/nologin "$NAME"
 
@@ -168,11 +181,11 @@ if [ ! -f "$APP/.env" ]; then
 	cat >"$APP/.env" <<ENV
 # install.sh 가 만든 운영 설정 — 키를 잃으면 회원 개인정보를 못 읽는다. 따로 보관할 것.
 PORT=$BE_PORT
-DB_HOST=127.0.0.1
-DB_PORT=3306
-DB_NAME=${NAME//-/_}
-DB_USER=${NAME//-/_}
-DB_PASSWORD=$(rnd 28)
+DB_HOST=$( [ -f "$PKG/db-conn" ] && connget DB_HOST || echo 127.0.0.1 )
+DB_PORT=$( [ -f "$PKG/db-conn" ] && connget DB_PORT || echo 3306 )
+DB_NAME=$( [ -f "$PKG/db-conn" ] && connget DB_NAME || echo "${NAME//-/_}" )
+DB_USER=$( [ -f "$PKG/db-conn" ] && connget DB_USER || echo "${NAME//-/_}" )
+DB_PASSWORD=$( [ -f "$PKG/db-conn" ] && connget DB_PASSWORD || rnd 28 )
 DB_CHARSET=utf8mb4
 DB_CONN_LIMIT=20
 AES_256_ENCRYPTION_KEY=$(rnd 32)
@@ -186,6 +199,7 @@ FE_INDEX_HTML=$APP/current/web/index.html
 RUN_JOBS=true
 ENV
 	umask 022
+	DB_NEW_ENV=1
 fi
 envget() { grep -E "^$1=" "$APP/.env" | tail -1 | cut -d= -f2-; }
 envset() { grep -qE "^$1=" "$APP/.env" || echo "$1=$2" >>"$APP/.env"; }
@@ -308,13 +322,77 @@ rel_switch "$REL"
 install -m 700 -o root -g root "$PKG/install.sh" "$APP/install.sh"
 
 # ─── 4. DB ──────────────────────────────────────────────
-DBN="$(envget DB_NAME)" DBU="$(envget DB_USER)" DBP="$(envget DB_PASSWORD)"
-say "DB 준비($DBN)"
+# DB 서버 바꾸기(deploy.sh --db-host) — 앞 접속값을 떠 두고 .env 의 DB_* 를 바꾼다. 아래에서 새 DB 에 못 붙으면 .env 를 되돌리고 멈춘다
+DB_SWITCHED=0
+if [ -f "$PKG/db-conn" ] && [ "${DB_NEW_ENV:-0}" != 1 ]; then
+	OH="$(envget DB_HOST)" OP="$(envget DB_PORT)" ON="$(envget DB_NAME)" OU="$(envget DB_USER)" OPW="$(envget DB_PASSWORD)"
+	if [ "$(connget DB_HOST):$(connget DB_PORT)/$(connget DB_NAME)/$(connget DB_USER)/$(connget DB_PASSWORD)" != "$OH:${OP:-3306}/$ON/$OU/$OPW" ]; then
+		ENV_BAK="$APP/.env.bak_$(date +%Y%m%d-%H%M%S)_db"
+		install -m 600 -o root -g root "$APP/.env" "$ENV_BAK"
+		for k in DB_HOST DB_PORT DB_NAME DB_USER DB_PASSWORD; do
+			v="$(connget "$k")"
+			if grep -qE "^$k=" "$APP/.env"; then sed -i "s|^$k=.*|$k=$v|" "$APP/.env"; else echo "$k=$v" >>"$APP/.env"; fi
+		done
+		DB_SWITCHED=1
+		say "DB 서버 바꾸기: ${OH:-127.0.0.1}/$ON → $(connget DB_HOST):$(connget DB_PORT)/$(connget DB_NAME)(앞 설정 백업 $ENV_BAK)"
+	fi
+fi
+rm -f "$PKG/db-conn"
+DBN="$(envget DB_NAME)" DBU="$(envget DB_USER)" DBP="$(envget DB_PASSWORD)" DBH="$(envget DB_HOST)" DBPORT="$(envget DB_PORT)"
+DBH="${DBH:-127.0.0.1}" DBPORT="${DBPORT:-3306}"
+case "$DBH" in 127.0.0.1 | localhost) DB_REMOTE=0 ;; *) DB_REMOTE=1 ;; esac
+app_sql() { MYSQL_PWD="$DBP" mariadb --default-character-set=utf8mb4 -h"$DBH" -P"$DBPORT" -u"$DBU" "$DBN" "$@"; }
+# 앞 DB(바꾸기 전) — 로컬이면 root, 다른 서버면 앞 계정으로
+old_sql() {
+	case "${OH:-127.0.0.1}" in
+		127.0.0.1 | localhost) mariadb --default-character-set=utf8mb4 "$ON" "$@" ;;
+		*) MYSQL_PWD="$OPW" mariadb --default-character-set=utf8mb4 -h"$OH" -P"${OP:-3306}" -u"$OU" "$ON" "$@" ;;
+	esac
+}
+old_dump() {
+	case "${OH:-127.0.0.1}" in
+		127.0.0.1 | localhost) mariadb-dump --single-transaction --default-character-set=utf8mb4 "$ON" ;;
+		*) MYSQL_PWD="$OPW" mariadb-dump --single-transaction --no-tablespaces --default-character-set=utf8mb4 -h"$OH" -P"${OP:-3306}" -u"$OU" "$ON" ;;
+	esac
+}
+# 서버 DB 백업(이 DB 의 지금 내용) — 다른 서버면 앱 계정으로
+db_dump() {
+	if [ "$DB_REMOTE" = 1 ]; then MYSQL_PWD="$DBP" mariadb-dump --single-transaction --no-tablespaces --default-character-set=utf8mb4 -h"$DBH" -P"$DBPORT" -u"$DBU" "$DBN"
+	else mariadb-dump --single-transaction --default-character-set=utf8mb4 "$DBN"; fi
+}
+say "DB 준비($DBN$( [ "$DB_REMOTE" = 1 ] && echo " @ $DBH:$DBPORT"))"
+if [ "$DB_REMOTE" = 1 ]; then
+	if ! app_sql -e "SELECT 1" >/dev/null 2>"$APP/.db-err"; then
+		echo "✗ DB 서버($DBH:$DBPORT)의 $DBN 에 계정 $DBU 로 접속하지 못했습니다: $(tail -1 "$APP/.db-err")"
+		echo "  다른 DB 서버는 그 서버에서 DB·계정을 먼저 만듭니다(이 서버 IP 에서 들어올 수 있게, 그 DB 에 모든 권한):"
+		echo "    CREATE DATABASE $DBN CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; CREATE USER '$DBU'@'<이 서버 IP>' IDENTIFIED BY '…'; GRANT ALL ON $DBN.* TO '$DBU'@'<이 서버 IP>';"
+		rm -f "$APP/.db-err"
+		if [ "$DB_SWITCHED" = 1 ]; then install -m 600 -o root -g root "$ENV_BAK" "$APP/.env"; echo "  · .env 는 앞 값으로 되돌렸습니다(사이트는 앞 DB 그대로)"; fi
+		rel_switch "$PREV_REL" 2>/dev/null || true
+		exit 1
+	fi
+	rm -f "$APP/.db-err"
+else
 mariadb -e "CREATE DATABASE IF NOT EXISTS \`$DBN\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS '$DBU'@'localhost' IDENTIFIED BY '$DBP'; CREATE USER IF NOT EXISTS '$DBU'@'127.0.0.1' IDENTIFIED BY '$DBP';
 ALTER USER '$DBU'@'localhost' IDENTIFIED BY '$DBP'; ALTER USER '$DBU'@'127.0.0.1' IDENTIFIED BY '$DBP';
 GRANT ALL PRIVILEGES ON \`$DBN\`.* TO '$DBU'@'localhost'; GRANT ALL PRIVILEGES ON \`$DBN\`.* TO '$DBU'@'127.0.0.1';"
-app_sql() { MYSQL_PWD="$DBP" mariadb --default-character-set=utf8mb4 -h127.0.0.1 -u"$DBU" "$DBN" "$@"; }
+fi
+# DB 서버를 바꿨는데 새 DB 가 비었으면 앞 DB 를 그대로 옮긴다(데이터가 있으면 그대로 쓴다). 주소 설정은 아래 「사이트 주소」 앞에서 맞춘다
+OLD_DOMS=""
+if [ "$DB_SWITCHED" = 1 ]; then
+	OLD_DOMS="$(old_sql -N -e "SELECT JSON_EXTRACT(json, '\$.domains') FROM settings WHERE metaKey='SITE' AND hostingId='ZBD'" 2>/dev/null || true)"
+	[[ "$OLD_DOMS" =~ ^[][{}\"a-zA-Z0-9.:,\ _-]+$ ]] || OLD_DOMS=""
+	NT0="$(app_sql -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE()")"
+	if [ "$NT0" = 0 ]; then
+		say "새 DB 가 비어 있어 앞 DB 를 옮깁니다"
+		old_dump | sed -e '1{/enable the sandbox mode/d;}' -e 's/ DEFINER=[^ ]* / /g' | app_sql ||
+			{ echo "✗ 앞 DB 를 옮기지 못했습니다 — .env 를 되돌립니다"; install -m 600 -o root -g root "$ENV_BAK" "$APP/.env"; rel_switch "$PREV_REL" 2>/dev/null || true; exit 1; }
+		echo "  · 옮김: 표 $(app_sql -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE()")개 · 관리자 $(app_sql -N -e "SELECT COUNT(*) FROM admins" 2>/dev/null || echo 0)명 · 회원 $(app_sql -N -e "SELECT COUNT(*) FROM members" 2>/dev/null || echo 0)명(앞 DB 는 그대로 남음)"
+	else
+		echo "  · 새 DB 에 이미 데이터가 있어 그대로 씁니다(표 ${NT0}개 — 앞 DB 는 그대로 남음)"
+	fi
+fi
 # 개발 DB 옮기기 — 회원 정보는 개발 키로 잠겨 있어 개발 키(dev-keys)가 같이 와야 넣는다. 넣은 뒤 주소 설정은 지우고(아래 「사이트 주소」 가 다시 만든다)
 #   서버 DB 를 바꿀 때는 서버 주소 설정을 먼저 떠 두었다가 되살린다
 DEVDB_LOADED=0
@@ -332,12 +410,17 @@ if [ -f "$PKG/dev-db.sql.gz" ]; then
 			mkdir -p "$APP/backups/db"; chmod 700 "$APP/backups" "$APP/backups/db"
 			B="$APP/backups/db/$(date +%Y%m%d-%H%M%S)-before-dev-db.sql.gz"
 			say "서버 DB 백업 → $B"
-			mariadb-dump --single-transaction --default-character-set=utf8mb4 "$DBN" | gzip >"$B" || { echo "✗ 서버 DB 를 백업하지 못해 바꾸지 않았습니다"; exit 1; }
+			db_dump | gzip >"$B" || { echo "✗ 서버 DB 를 백업하지 못해 바꾸지 않았습니다"; exit 1; }
 			chmod 600 "$B"
-			mariadb -e "DROP DATABASE \`$DBN\`; CREATE DATABASE \`$DBN\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+			if [ "$DB_REMOTE" = 1 ]; then # 다른 DB 서버 — 앱 계정은 DB 를 지우고 만들 권한이 없을 수 있어 표·뷰를 지운다
+				DROPS="$(app_sql -N -e "SELECT CONCAT('DROP ', IF(table_type='VIEW','VIEW','TABLE'), ' IF EXISTS \`', table_name, '\`;') FROM information_schema.tables WHERE table_schema=DATABASE()")"
+				printf 'SET FOREIGN_KEY_CHECKS=0;\n%s\n' "$DROPS" | app_sql
+			else
+				mariadb -e "DROP DATABASE \`$DBN\`; CREATE DATABASE \`$DBN\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+			fi
 		fi
 		say "개발 DB 넣기"
-		gunzip -c "$PKG/dev-db.sql.gz" | app_sql || { echo "✗ 개발 DB 를 넣지 못했습니다${B:+ — 되살리기: gunzip -c $B | sudo mariadb $DBN}"; exit 1; }
+		gunzip -c "$PKG/dev-db.sql.gz" | app_sql || { echo "✗ 개발 DB 를 넣지 못했습니다${B:+ — 되살리기: gunzip -c $B | (DB 에 넣기)}"; exit 1; }
 		if [ -n "$SAVED_DOMS" ] && [ "$SAVED_DOMS" != NULL ]; then
 			app_sql -e "UPDATE settings SET json = JSON_SET(json, '\$.domains', JSON_EXTRACT('$SAVED_DOMS', '\$')) WHERE metaKey='SITE' AND hostingId='ZBD'"
 		else
@@ -370,6 +453,16 @@ for f in "$REL"/db/migrations/*.up.sql; do
 done
 # 기본 데이터 — 지운 메뉴·권한은 다시 넣지 않게 seed-guard 로 감싸 한 세션에서(db/seed-guard/build.sh — 새로·다시 붙인 플러그인의 메뉴는 되살린다)
 sh "$REL"/db/seed-guard/build.sh "$REL"/db/seed | app_sql
+# DB 서버를 바꿨고 새 DB 의 주소 설정이 없거나 개발 값(localhost)이면 앞 DB 의 주소를 넣고 홈 주소·쿠키 범위도 다시 계산한다
+FORCE_ADDR=0
+if [ "$DB_SWITCHED" = 1 ] && [ -n "$OLD_DOMS" ] && [ "$OLD_DOMS" != NULL ]; then
+	CUR_U1="$(app_sql -N -e "SELECT JSON_UNQUOTE(JSON_EXTRACT(json, '\$.domains.user[0]')) FROM settings WHERE metaKey='SITE' AND hostingId='ZBD'")"
+	case "$CUR_U1" in "" | NULL | localhost* | *.localhost* | 127.0.0.1*)
+		app_sql -e "UPDATE settings SET json = JSON_SET(json, '\$.domains', JSON_EXTRACT('$OLD_DOMS', '\$')) WHERE metaKey='SITE' AND hostingId='ZBD'"
+		echo "  · 새 DB 의 주소 설정을 앞 DB 값으로 맞춤"
+		FORCE_ADDR=1 ;;
+	esac
+fi
 # 사이트 주소 — 원본은 DB 사이트 설정 domains {user[], admin[]}(관리자 「환경 설정 › 도메인」). 처음이면 --domain·--admin 으로 만든다.
 #   홈 주소·쿠키 범위·사이트맵 주소·호스팅 목록 homepage 는 domains 로 계산해 같이 저장한다(서버 web/domains.go 와 같은 규칙)
 site_json() { app_sql -N -e "SELECT JSON_UNQUOTE(JSON_EXTRACT(json, '$1')) FROM settings WHERE metaKey='SITE' AND hostingId='ZBD'"; }
@@ -408,7 +501,7 @@ done
 ADMIN1="${ADMINS%% *}" # 대표 관리자 주소
 jarr() { local o="" h; for h in "$@"; do o="$o${o:+,}'$h'"; done; printf 'JSON_ARRAY(%s)' "$o"; }
 DOMS="JSON_OBJECT('user', $(jarr $USER_HOSTS), 'admin', $(jarr $ADMINS))"
-if [ "$NEW_INIT" = 1 ] || [ "$DEVDB_LOADED" = 1 ]; then # 개발 DB 를 넣었으면 홈 주소·쿠키 범위·사이트맵도 개발 값(localhost)이라 다시
+if [ "$NEW_INIT" = 1 ] || [ "$DEVDB_LOADED" = 1 ] || [ "$FORCE_ADDR" = 1 ]; then # 개발 DB 를 넣었으면 홈 주소·쿠키 범위·사이트맵도 개발 값(localhost)이라 다시
 	URL="https://$DOMAIN/"
 	app_sql -e "UPDATE settings SET json = JSON_SET(json, '\$.items[0].homepage', '$URL') WHERE metaKey='HOSTINGS' AND hostingId='';
 UPDATE settings SET json = JSON_SET(json, '\$.domains', $DOMS, '\$.cookieHost', '.$DOMAIN', '\$.homepage', '$URL', '\$.design.homepage', '$URL',

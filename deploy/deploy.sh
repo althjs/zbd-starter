@@ -4,6 +4,8 @@
 #   ./deploy/deploy.sh <ssh 대상> --domain example.com [--admin admin.example.com] [--name zbd-starter] [--port ssh포트] [--ssl 이메일]   처음 한 번
 #   ./deploy/deploy.sh                      두 번째부터는 deploy/deploy.conf 에 남긴 값으로(주소는 서버 DB 의 도메인 설정을 쓴다)
 #   ./deploy/deploy.sh --rollback           서버의 앞 판으로 되돌리기(빌드·올리기 없이 몇 초 — DB 는 그대로). 새 판이 뜨지 않으면 배포가 알아서 되돌린다
+#   ./deploy/deploy.sh --db-host 172.16.0.50[:3306] --db-name 이름 --db-user 계정   DB 를 다른 서버로(비밀번호는 묻는다 · ZBD_DB_PASSWORD 로도) — 처음 설치·옮기기 모두.
+#                                           DB·계정은 그 DB 서버에서 먼저 만든다. 서버 .env 에 남으니 다음부터는 그냥 zbd deploy. 새 DB 가 비었으면 앞 DB 를 옮긴다
 #   ./deploy/deploy.sh --with-db            서버 DB 를 이 컴퓨터 개발 DB 로 바꾼다(서버 DB 는 먼저 백업 · 주소 설정은 서버 값 유지) — 이번 한 번만
 #
 # DB(2026-10-20): **처음 배포**(서버에 이 사이트가 없을 때)는 이 컴퓨터 개발 DB 를 통째로 떠서 서버 DB 로 넣는다 — 개발한 회원·글·메뉴·디자인·설정이 그대로.
@@ -21,7 +23,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CONF="$ROOT/deploy/deploy.conf"
-HOST="" PORT="" DOMAIN="" ADMIN="" NAME="" OUT="" ARCH="" SSL="" ADMIN_APPS="" KEYS="" FILES="" ENVS="" ROLLBACK=0 DBMODE=""
+HOST="" PORT="" DOMAIN="" ADMIN="" NAME="" OUT="" ARCH="" SSL="" ADMIN_APPS="" KEYS="" FILES="" ENVS="" ROLLBACK=0 DBMODE="" DB_HOST_ARG="" DB_NAME_ARG="" DB_USER_ARG=""
 [ -f "$CONF" ] && . "$CONF"
 while [ $# -gt 0 ]; do
 	case "$1" in
@@ -40,7 +42,10 @@ while [ $# -gt 0 ]; do
 		--arch) ARCH="$2"; shift 2 ;;   # --out 과 함께: amd64(기본) · arm64
 		--rollback) ROLLBACK=1; shift ;; # 앞 판으로 되돌리기
 		--with-db) DBMODE=replace; shift ;; # 서버 DB 를 개발 DB 로 바꾼다(백업 뒤) — 남지 않는다
-		--no-db) DBMODE=0; shift ;;          # 처음 배포여도 개발 DB 를 보내지 않는다 — 남지 않는다
+		--no-db) DBMODE=0; shift ;;
+		--db-host) DB_HOST_ARG="$2"; shift 2 ;; # 다른 DB 서버(호스트[:포트]) — 남지 않는다(서버 .env 에 남음)
+		--db-name) DB_NAME_ARG="$2"; shift 2 ;;
+		--db-user) DB_USER_ARG="$2"; shift 2 ;;          # 처음 배포여도 개발 DB 를 보내지 않는다 — 남지 않는다
 		-*) echo "✗ 모르는 옵션: $1"; exit 1 ;;
 		*) [ -z "${ARG_HOST:-}" ] || { echo "✗ 서버(ssh 대상)는 하나만 넣습니다: $ARG_HOST 와 $1 — 이메일이면 앞에 --ssl 을 붙이세요(--ssl $1)"; exit 1; }
 			ARG_HOST="$1"; HOST="$1"; shift ;;
@@ -61,6 +66,18 @@ NAME="${NAME:-zbd-starter}"
 # 관리자 주소 — 플러그인이 이 줄 뒤에 주소를 더한다(ADMIN_APPS="$ADMIN_APPS chat" → chat.<대표 사용자 주소> · mail · office · photo)
 [[ "$NAME" =~ ^[a-z][a-z0-9-]{1,30}$ ]] || { echo "✗ --name 은 영문 소문자·숫자·- 만"; exit 1; }
 
+DB_PW=""
+if [ -n "$DB_HOST_ARG$DB_NAME_ARG$DB_USER_ARG" ]; then
+	{ [ -n "$DB_HOST_ARG" ] && [ -n "$DB_NAME_ARG" ] && [ -n "$DB_USER_ARG" ]; } || { echo "✗ 다른 DB 서버는 --db-host · --db-name · --db-user 를 같이 넣습니다"; exit 1; }
+	[ -z "$OUT" ] || { echo "✗ --db-host 는 꾸러미만 만들기(--out)와 같이 쓸 수 없습니다(비밀번호가 파일로 돌아다니지 않게)"; exit 1; }
+	[[ "$DB_HOST_ARG" =~ ^[A-Za-z0-9.-]+(:[0-9]{1,5})?$ ]] || { echo "✗ --db-host 는 호스트 또는 호스트:포트 — $DB_HOST_ARG"; exit 1; }
+	[[ "$DB_NAME_ARG" =~ ^[A-Za-z0-9_]{1,64}$ ]] || { echo "✗ --db-name 은 영문·숫자·_ 만"; exit 1; }
+	[[ "$DB_USER_ARG" =~ ^[A-Za-z0-9_.-]{1,80}$ ]] || { echo "✗ --db-user 는 영문·숫자·_ . - 만"; exit 1; }
+	DB_PW="${ZBD_DB_PASSWORD:-}"
+	if [ -z "$DB_PW" ]; then printf 'DB 비밀번호(%s@%s): ' "$DB_USER_ARG" "$DB_HOST_ARG"; read -rs DB_PW; echo; fi
+	[ -n "$DB_PW" ] || { echo "✗ DB 비밀번호가 비었습니다"; exit 1; }
+	case "$DB_PW" in *[[:space:]\|\'\"\$\`\\\&]*) echo "✗ DB 비밀번호에 빈칸·따옴표·\$·\`·|·&·\\ 는 쓸 수 없습니다(.env 한 줄로 넣습니다)"; exit 1 ;; esac
+fi
 say() { printf '\033[1;36m▶ %s\033[0m\n' "$*"; }
 if [ "$ROLLBACK" = 1 ]; then
 	[ -n "$HOST" ] || { echo "✗ 배포한 적이 없습니다(deploy/deploy.conf 없음)"; exit 1; }
@@ -95,6 +112,10 @@ cp -R "$ROOT/zbd-fe-svelte5/build/." "$PKG/web/"
 cp -R "$ROOT/db/migrations" "$ROOT/db/seed" "$ROOT/db/seed-guard" "$ROOT/db/assets" "$PKG/db/"
 [ -d "$ROOT/db/removals" ] && cp -R "$ROOT/db/removals" "$PKG/db/" # zbd remove 가 남긴 DB 지우기
 cp "$ROOT/deploy/server/install.sh" "$PKG/"
+if [ -n "$DB_HOST_ARG" ]; then # 다른 DB 서버 — install.sh 가 서버 .env 의 DB_* 를 이 값으로(앞 .env 백업)
+	(umask 077 && printf 'DB_HOST=%s\nDB_PORT=%s\nDB_NAME=%s\nDB_USER=%s\nDB_PASSWORD=%s\n' "${DB_HOST_ARG%%:*}" "$( [[ "$DB_HOST_ARG" == *:* ]] && echo "${DB_HOST_ARG##*:}" || echo 3306 )" "$DB_NAME_ARG" "$DB_USER_ARG" "$DB_PW" >"$PKG/db-conn")
+	echo "  DB 서버: $DB_HOST_ARG · $DB_NAME_ARG · $DB_USER_ARG"
+fi
 # E2E 테스트 플러그인(zbd add e2e-test) — 결과 올리기 비밀값을 이 컴퓨터 개발 설정과 같게(저장소의 e2e 키트가 운영 사이트에도 같은 값으로 올린다)
 envlocal() { grep -E "^$1=" "$ROOT/zbd-be-golang/.env.local" 2>/dev/null | tail -1 | cut -d= -f2- | tr -d '"' || true; }
 E2E_S="$(envlocal E2E_UPLOAD_SECRET)"
