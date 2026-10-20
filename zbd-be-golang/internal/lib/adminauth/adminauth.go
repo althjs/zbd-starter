@@ -157,7 +157,8 @@ ON a.menuId = b.menuId AND a.hostingId = b.hostingId`)
 		if jsx.Truthy(J.V("isDeveloper")) {
 			e.Set("isDeveloper", true)
 		}
-		if jsx.Truthy(J.V("isSuperAdmin")) {
+		// 최고 관리자 = 표시 또는 그룹 1(화면 isSuperAdmin()·members.go callerFlags 와 같게) — 이 칸만 보는 플러그인 판정이 그룹 1 을 빠뜨렸다
+		if jsx.Truthy(J.V("isSuperAdmin")) || jsx.Number(r.V("groupId")) == 1 {
 			e.Set("isSuperAdmin", true)
 		}
 		mam.Set(id, e)
