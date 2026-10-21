@@ -119,7 +119,9 @@ export const SK = {
 		current: (owner: string | number, win = false) => `zbd:claude:current:${owner}${win ? '-win' : ''}`
 	},
 	messenger: {
-		claudeSeen: 'zbd:messenger:claudeSeen'
+		claudeSeen: 'zbd:messenger:claudeSeen',
+		/** 반응 고르기 창 「최근 사용」 이모지(최대 24) */
+		recentEmoji: 'zbd:messenger:recentEmoji'
 	},
 	talk: {
 		/** sessionStorage */

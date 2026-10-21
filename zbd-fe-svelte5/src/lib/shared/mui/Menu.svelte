@@ -9,17 +9,26 @@
 	let paper = $state<HTMLElement>();
 	let pos = $state({ top: 0, left: 0 });
 
+	function place() {
+		if (!anchor) return;
+		const r = anchor.getBoundingClientRect();
+		const h = paper?.offsetHeight || 0;
+		const w = paper?.offsetWidth || 0;
+		pos = {
+			top: Math.max(16, Math.min(r.bottom, window.innerHeight - h - 16)),
+			left: Math.max(16, Math.min(r.left, window.innerWidth - w - 16))
+		};
+	}
 	$effect(() => {
 		if (!open || !anchor) return;
-		tick().then(() => {
-			const r = anchor!.getBoundingClientRect();
-			const h = paper?.offsetHeight || 0;
-			const w = paper?.offsetWidth || 0;
-			pos = {
-				top: Math.max(16, Math.min(r.bottom, window.innerHeight - h - 16)),
-				left: Math.max(16, Math.min(r.left, window.innerWidth - w - 16))
-			};
-		});
+		tick().then(place);
+	});
+	// 안 내용이 바뀌어 크기가 달라지면(예: 반응 메뉴 → 이모지 고르기) 다시 화면 안으로
+	$effect(() => {
+		if (!open || !paper) return;
+		const ro = new ResizeObserver(() => place());
+		ro.observe(paper);
+		return () => ro.disconnect();
 	});
 </script>
 
