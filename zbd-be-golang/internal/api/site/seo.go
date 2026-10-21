@@ -602,6 +602,13 @@ func renderSeo(ctx context.Context, c *web.Ctx, conn *sql.Conn, rawP, p string, 
 
 	// 사이트 공통 구조화 데이터 — 메뉴는 공통 코드 SEO 항목의 메뉴 이름(navName)
 	s.siteName = orStr(siteMeta.V("companyName"))
+	if c.IsAdminHost(host) {
+		pth := p
+		if pth == "" {
+			pth = "/"
+		}
+		applyAdminSeo(s, siteMeta.Map("adminSeo"), cdn+hostingID, adminOrigin(host, web.IsLocalHost(host)), pth)
+	}
 	nav := getSiteNavItems(seoCodeItems, homepageRaw)
 	pth := p
 	if pth == "" {

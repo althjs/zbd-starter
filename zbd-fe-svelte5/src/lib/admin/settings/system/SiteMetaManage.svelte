@@ -42,6 +42,7 @@
 	});
 	const diffs = $derived(diffList(meta.json, json).filter((d) => !(d.kind == 'add' && (d.after === '' || d.after === null) && ['title', 'logo', 'favicon'].includes(d.path))));
 	const set = (k: string, v: any) => (json = { ...json, [k]: v });
+	const setSeo = (k: string, v: any) => (json = { ...json, adminSeo: { ...(json.adminSeo || {}), [k]: v } });
 	async function save() {
 		const o = await api.put(`/service/admin/meta/${meta.metaKey}${hostingId ? `?hostingId=${hostingId}` : ''}`, json);
 		if (!o.ok) return alert('저장 도중 오류가 발생하였습니다.');
@@ -200,6 +201,47 @@
 				</div>{/snippet}
 		</ImagePicker>
 	{/snippet}
+	{#snippet adminOg()}
+		<div class={cx('MuiStack-root', toClass({ gap: 12, width: '100%', maxWidth: 640 }))}>
+			<OutlinedField
+				size="small"
+				fullWidth
+				label="제목"
+				placeholder={json.design?.title || json.title || '비우면 사이트 제목'}
+				value={json.adminSeo?.title || ''}
+				oninput={(v) => setSeo('title', v)}
+			/>
+			<OutlinedField
+				size="small"
+				fullWidth
+				label="설명"
+				placeholder={json.design?.description || '비우면 사이트 설명'}
+				value={json.adminSeo?.description || ''}
+				oninput={(v) => setSeo('description', v)}
+			/>
+			<p class="MuiTypography-root MuiTypography-caption">그림 — 1200×630 권장, 비우면 사이트 OG 이미지</p>
+			<ImagePicker
+				size={{ width: 800, height: 400 }}
+				image={json.adminSeo?.image}
+				{hostingId}
+				folder="site"
+				accept=".jpg, .jpeg, .png, .webp, .gif"
+				useUnsplash
+				useOriginalFileName
+				disableCrop
+				useDelete
+				onSelect={(i) => setSeo('image', i?.name ? { name: i.name } : null)}
+			>
+				{#snippet after()}{#if json.adminSeo?.image?.name}<img
+							class="MuiCardMedia-root MuiCardMedia-media MuiCardMedia-img"
+							style="width:240px;aspect-ratio:1200/630;object-fit:cover;border-radius:6px"
+							src={`${adminImagePrefix(hostingId)}/site/${json.adminSeo.image.name}`}
+							alt=""
+						/>{/if}{/snippet}
+			</ImagePicker>
+			{#if json.adminSeo?.image?.name}<Button size="small" sx={{ width: 'fit-content' }} onclick={() => setSeo('image', null)}>그림 빼기</Button>{/if}
+		</div>
+	{/snippet}
 	{#snippet info()}<SiteBasicInfoForm item={json} onChange={(o) => (json = o)} />{/snippet}
 	{#snippet sup()}<SiteSuperAdminSettingForm item={json} onChange={set} />{/snippet}
 	<div class="sgrps">
@@ -219,6 +261,9 @@
 				{@render row('파비콘', fav)}
 			</SettingGroup>
 		{/if}
+		<SettingGroup title="관리자 주소 링크 미리보기" desc="관리자 주소를 메신저·카톡에 붙였을 때 나오는 제목·설명·그림 — 비운 칸은 「홈페이지」 탭의 사이트 값">
+			{@render adminOg()}
+		</SettingGroup>
 		<SettingGroup title="회사 정보" desc="사이트 아래(푸터)·메일·약관에 쓰는 사업자 정보">
 			{@render info()}
 		</SettingGroup>
