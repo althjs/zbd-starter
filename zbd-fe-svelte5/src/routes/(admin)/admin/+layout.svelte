@@ -27,6 +27,12 @@
 	$effect(() => {
 		if (SINGLE_APP && !SINGLE_APP.paths.some((p) => page.url.pathname.indexOf(p) == 0)) goto(SINGLE_APP.home, { replaceState: true });
 	});
+	// 메신저 앱에서 업무 채팅 알림·링크(/admin/claude/N?session=)를 열면 업무 채팅 화면 대신 메신저 안 그 대화로(2026-10-21 oye)
+	$effect(() => {
+		if (SINGLE_APP?.key != 'messenger' || page.url.pathname.indexOf('/admin/claude') != 0) return;
+		const s = page.url.searchParams.get('session');
+		if (s) goto(`/admin/messenger?claude=${encodeURIComponent(s)}`, { replaceState: true });
+	});
 	// 파비콘 = 사이트 설정(SITE 메타 favicon)이 있으면 그것, 없으면 app.html 의 기본 즈비드 아이콘(2026-10-03 — 설정값이 어디에도 쓰이지 않았다)
 	$effect(() => {
 		void admin.metaVersion;
