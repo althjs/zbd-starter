@@ -624,6 +624,14 @@
 								{#if selectedFile.name.endsWith('.md')}
 									<div class={cx('MuiBox-root', toClass({ paddingLeft: 24, paddingRight: 24 }))} use:mdLinks><MarkdownView text={typeof preview === 'string' ? preview : ''} /></div>
 								{:else}
+									{#if fileActions(selectedFile.name).length}
+										{@const f = selectedFile}
+										<div class={cx('MuiBox-root', toClass({ display: 'flex', gap: 8, padding: '12px 16px 0' }))}>
+											{#each fileActions(f.name) as a}
+												<Button variant="outlined" size="small" onclick={() => a.run(rootFolder, f)}><Icon name={a.icon} sx={{ fontSize: 18, marginRight: 6 }} />{a.label}</Button>
+											{/each}
+										</div>
+									{/if}
 									<pre
 										class={toClass({
 											margin: 0,
@@ -648,7 +656,13 @@
 								<div class={cx('MuiBox-root', toClass({ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }))}>
 									<Icon name={fileIcon(selectedFile.name)} sx={{ fontSize: 64, color: SEC, marginBottom: 16 }} />
 									<p class={cx(TYPO, toClass({ marginBottom: 24 }))}>미리보기를 지원하지 않는 파일 형식입니다.</p>
-									<Button variant="contained" onclick={download}>다운로드</Button>
+									<div class={cx('MuiBox-root', toClass({ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }))}>
+										<Button variant="contained" onclick={download}>다운로드</Button>
+										{#each fileActions(selectedFile.name) as a}
+											{@const f = selectedFile}
+											<Button variant="outlined" onclick={() => a.run(rootFolder, f)}><Icon name={a.icon} sx={{ fontSize: 18, marginRight: 6 }} />{a.label}</Button>
+										{/each}
+									</div>
 								</div>
 							{/if}
 						</div>
