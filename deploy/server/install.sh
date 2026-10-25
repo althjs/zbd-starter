@@ -394,7 +394,7 @@ F2BS
 			systemctl enable fail2ban >/dev/null 2>&1 || true
 			if fail2ban-client -t >/dev/null 2>&1; then
 				{ systemctl is-active --quiet fail2ban && fail2ban-client reload >/dev/null 2>&1; } || systemctl restart fail2ban
-				echo "  · 자동 차단(fail2ban) 켬 — $F2B_ACTION"
+				echo "  · 자동 차단(fail2ban) 켬$([ "$F2B_OWN" = 1 ] && echo " — $F2B_ACTION")"
 			else
 				echo "  ⚠ fail2ban 설정 검사 실패 — 자동 차단을 켜지 않았습니다(fail2ban-client -t 로 확인)"
 			fi
