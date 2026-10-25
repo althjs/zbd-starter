@@ -293,6 +293,115 @@ fi
 DENY
 	sed -i -e "s|__APP__|$APP|g" -e "s|__NAME__|$NAME|g" -e "s|__OFFICE__|$(envget OFFICE_IPS | tr ',' ' ')|" "$DENY_SCRIPT.tmp"
 	install -m 755 -o root -g root "$DENY_SCRIPT.tmp" "$DENY_SCRIPT"; rm -f "$DENY_SCRIPT.tmp"
+	# 자동 차단(fail2ban zbd-web-attack) — 공격 요청(SQL 삽입·취약점 스캔·경로 침투)을 10분에 3번 하면 서버 방화벽이 1시간 막고, 다시 오면 두 배씩(최대 1주).
+	#   규칙·감옥은 서버에 하나(이 서버의 모든 사이트 nginx 로그를 본다) · 막지 않는 IP = 내부망·서버 자신·사이트마다 .env OFFICE_IPS(/etc/fail2ban/zbd-ignore.d/<이름>) · Cloudflare.
+	#   관리자 화면 「자동 차단 IP」 는 이 사이트 전용 상태 스크립트 하나만 sudo 로(인자 없음, 해제할 IP 는 파일로). 끄기 = ZBD_NO_FAIL2BAN=1 로 배포
+	F2B_SCRIPT="/usr/local/sbin/zbd-fail2ban-status-$NAME"
+	if [ "${ZBD_NO_FAIL2BAN:-0}" != 1 ]; then
+		export DEBIAN_FRONTEND=noninteractive
+		command -v fail2ban-client >/dev/null || { apt-get update -qq || true; apt-get install -y -qq fail2ban >/dev/null 2>&1 || true; }
+		if command -v fail2ban-client >/dev/null; then
+			F2B_ACTION=nftables-allports
+			if ! command -v nft >/dev/null; then
+				if command -v iptables >/dev/null; then F2B_ACTION=iptables-allports; else apt-get install -y -qq nftables >/dev/null 2>&1 || F2B_ACTION=iptables-allports; fi
+			fi
+			mkdir -p /etc/fail2ban/zbd-ignore.d
+			echo "$(envget OFFICE_IPS | tr ',' ' ')" >"/etc/fail2ban/zbd-ignore.d/$NAME"
+			# 이 서버에 손으로 만든 같은 이름 규칙이 있으면(스타터 표시 없음) 덮지 않고 그대로 쓴다 — 상태 스크립트만
+			F2B_OWN=1
+			if [ -f /etc/fail2ban/jail.d/zbd-web-attack.local ] && ! grep -q 'zbd 스타터 install.sh' /etc/fail2ban/jail.d/zbd-web-attack.local; then F2B_OWN=0; echo "  · 자동 차단: 이 서버의 기존 zbd-web-attack 규칙을 그대로 씀"; fi
+			if [ "$F2B_OWN" = 1 ]; then
+			cat >/etc/fail2ban/filter.d/zbd-web-attack.conf <<'F2BF'
+# 웹 공격 자동 차단 — SQL 삽입·취약점 스캔·경로 침투 요청. zbd 스타터 install.sh 가 만든다(외부 공격 감지 플러그인)
+[Definition]
+_req = (?:GET|POST|HEAD|PUT|DELETE|OPTIONS|PATCH) [^"]*
+failregex = ^<HOST> [^"]*"%(_req)s(?:'%%20(?:OR|AND)|%%20OR%%20\d|\bOR%%20\d+[+=]|sleep\(\d|sysdate\(|benchmark\(|union(?:%%20|\+|\s)+(?:all(?:%%20|\+|\s)+)?select|information_schema|/\*\*/|\\x22%%20AND|1'\\x22|(?:\.\./){3,}|/etc/passwd|<script|%%3Cscript|/\.env\b|/\.git/|/\.aws/|/wp-(?:admin|login|content|includes)|xmlrpc\.php|phpmyadmin|/cgi-bin/|/vendor/phpunit|/actuator\b|/_mmServerScripts/|/moveitisapi/|/OA_HTML/|/nagiosql/|\.(?:php\d?|asp|aspx|jsp|jspx|cgi|dll)(?:[?/ ]))
+ignoreregex =
+datepattern = \[%%d/%%b/%%Y:%%H:%%M:%%S %%z\]
+F2BF
+			F2B_IGNORE="127.0.0.1/8 ::1 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 $(hostname -I 2>/dev/null) $(cat /etc/fail2ban/zbd-ignore.d/* 2>/dev/null | tr '\n' ' ')"
+			cat >/etc/fail2ban/jail.d/zbd-web-attack.local <<F2BJ
+# 웹 공격 자동 차단 — zbd 스타터 install.sh 가 만든다(사이트를 배포할 때마다 다시 씀). 되돌리기: 이 파일과 filter.d/zbd-web-attack.conf 를 지우고 fail2ban-client reload
+[zbd-web-attack]
+enabled  = true
+backend  = auto
+filter   = zbd-web-attack
+logpath  = /var/log/nginx/*access.log
+port     = http,https
+banaction = $F2B_ACTION
+maxretry = 3
+findtime = 10m
+bantime  = 1h
+bantime.increment = true
+bantime.factor = 2
+bantime.maxtime = 1w
+# 내부망·서버 자신·사이트 OFFICE_IPS · Cloudflare(앞단 프록시 — 막으면 그 도메인 정상 사용자도 막힌다)
+ignoreip = $(echo $F2B_IGNORE)
+           173.245.48.0/20 103.21.244.0/22 103.22.200.0/22 103.31.4.0/22 141.101.64.0/18 108.162.192.0/18 190.93.240.0/20 188.114.96.0/20
+           197.234.240.0/22 198.41.128.0/17 162.158.0.0/15 104.16.0.0/13 104.24.0.0/14 172.64.0.0/13 131.0.72.0/22
+F2BJ
+			fi
+			cat >"$F2B_SCRIPT.tmp" <<'F2BS'
+#!/bin/bash
+# __NAME__ 자동 차단(fail2ban zbd-web-attack) 상태 — install.sh 가 만든다(root 755, sudoers 에 이 파일만). 인자 없음, 결과는 JSON 한 줄.
+#   관리자 「외부 공격 감지」 의 「자동 차단 IP」 가 부른다. 해제할 IP 는 __APP__/data/nginx-deny/f2b-unban.txt(IP 한 줄) — 검사 뒤 해제하고 지운다.
+set -uo pipefail
+JAIL=zbd-web-attack
+UNBAN=__APP__/data/nginx-deny/f2b-unban.txt
+LOG=/var/log/fail2ban.log
+esc() { local s=${1//\\/\\\\}; printf '%s' "${s//\"/\\\"}"; }
+if ! fail2ban-client status "$JAIL" >/dev/null 2>&1; then
+	echo '{"installed":false,"bans":[],"events":[]}'
+	exit 0
+fi
+msg=""
+if [ -e "$UNBAN" ] || [ -L "$UNBAN" ]; then
+	ip=""
+	[ -f "$UNBAN" ] && [ ! -L "$UNBAN" ] && ip=$(head -c 64 "$UNBAN" | tr -d '[:space:]')
+	rm -f "$UNBAN"
+	if [[ "$ip" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]] || [[ "$ip" =~ ^[0-9a-fA-F:]+$ && "$ip" == *:* ]]; then
+		if fail2ban-client set "$JAIL" unbanip "$ip" >/dev/null 2>&1; then msg="해제: $ip"; else msg="해제 실패: $ip"; fi
+	else
+		msg="잘못된 IP 형식"
+	fi
+fi
+st=$(fail2ban-client status "$JAIL")
+total_banned=$(awk -F'\t' '/Total banned/{print $2}' <<<"$st")
+total_failed=$(awk -F'\t' '/Total failed/{print $2}' <<<"$st")
+bans=""
+while IFS= read -r line; do
+	[ -z "$line" ] && continue
+	ip=$(awk '{print $1}' <<<"$line"); at=$(awk '{print $2" "$3}' <<<"$line")
+	secs=$(awk '{print $5}' <<<"$line"); until=$(awk '{print $7" "$8}' <<<"$line")
+	[[ "$ip" =~ ^[0-9a-fA-F.:]+$ ]] || continue
+	[[ "$secs" =~ ^[0-9]+$ ]] || secs=0
+	bans+="${bans:+,}{\"ip\":\"$ip\",\"at\":\"$(esc "$at")\",\"seconds\":$secs,\"until\":\"$(esc "$until")\"}"
+done < <(fail2ban-client get "$JAIL" banip --with-time 2>/dev/null)
+events=""
+while IFS= read -r line; do
+	at=$(cut -c1-19 <<<"$line")
+	act=$(sed -nE "s/.*\] (Increase Ban|Unban|Ban) .*/\1/p" <<<"$line")
+	ip=$(sed -nE "s/.*\] (Increase Ban|Unban|Ban) ([0-9a-fA-F.:]+).*/\2/p" <<<"$line")
+	[ -n "$act" ] && [ -n "$ip" ] || continue
+	events+="${events:+,}{\"at\":\"$(esc "$at")\",\"action\":\"$(esc "$act")\",\"ip\":\"$ip\"}"
+done < <(grep -E "\[$JAIL\] (Ban|Unban|Increase Ban)" "$LOG" 2>/dev/null | tail -100)
+printf '{"installed":true,"totalBanned":%s,"totalFailed":%s,"bans":[%s],"events":[%s],"message":"%s"}\n' \
+	"${total_banned:-0}" "${total_failed:-0}" "$bans" "$events" "$(esc "$msg")"
+F2BS
+			sed -i -e "s|__APP__|$APP|g" -e "s|__NAME__|$NAME|g" "$F2B_SCRIPT.tmp"
+			install -m 755 -o root -g root "$F2B_SCRIPT.tmp" "$F2B_SCRIPT"; rm -f "$F2B_SCRIPT.tmp"
+			envset FAIL2BAN_STATUS_SCRIPT "$F2B_SCRIPT"; sed -i "s|^FAIL2BAN_STATUS_SCRIPT=.*|FAIL2BAN_STATUS_SCRIPT=$F2B_SCRIPT|" "$APP/.env"
+			systemctl enable fail2ban >/dev/null 2>&1 || true
+			if fail2ban-client -t >/dev/null 2>&1; then
+				{ systemctl is-active --quiet fail2ban && fail2ban-client reload >/dev/null 2>&1; } || systemctl restart fail2ban
+				echo "  · 자동 차단(fail2ban) 켬 — $F2B_ACTION"
+			else
+				echo "  ⚠ fail2ban 설정 검사 실패 — 자동 차단을 켜지 않았습니다(fail2ban-client -t 로 확인)"
+			fi
+		else
+			echo "  ⚠ fail2ban 을 설치하지 못해 자동 차단을 건너뜁니다"
+		fi
+	fi
 fi
 # 배포한 컴퓨터의 설정(deploy.sh 가 dev-env 로 보냄 — 서버가 정하는 값·localhost 값은 빼고 옴): 같은 이름은 그 값으로, 없으면 더한다. 서버에만 있는 줄은 둔다
 if [ -f "$PKG/dev-env" ]; then
@@ -614,7 +723,7 @@ SC="$(command -v systemctl)"
 {
 	echo "# zbd 스타터 $NAME — 자기 서비스 재시작만(install.sh)"
 	echo "$NAME ALL=(root) NOPASSWD: $SC restart $NAME$([ "$HAS_SOCK" = 1 ] && echo ", $SC restart $NAME-socket")"
-	if [ "$HAS_ATTACK" = 1 ]; then echo "$NAME ALL=(root) NOPASSWD: $DENY_SCRIPT"; fi
+	if [ "$HAS_ATTACK" = 1 ]; then echo "$NAME ALL=(root) NOPASSWD: $DENY_SCRIPT"; if [ -x "${F2B_SCRIPT:-}" ]; then echo "$NAME ALL=(root) NOPASSWD: $F2B_SCRIPT"; fi; fi
 } >"/etc/sudoers.d/zbd-$NAME"
 chmod 440 "/etc/sudoers.d/zbd-$NAME"
 visudo -cf "/etc/sudoers.d/zbd-$NAME" >/dev/null || { rm -f "/etc/sudoers.d/zbd-$NAME"; echo "  ⚠ sudoers 확인 실패 — 재시작 허락을 뺐습니다"; }
