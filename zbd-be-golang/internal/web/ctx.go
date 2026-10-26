@@ -214,7 +214,8 @@ func serve(a *app.App, rt *route, prefix string, params map[string]any, w http.R
 				return
 			}
 		} else if !a.Admin.Allowed(c.Token.HostingID, c.Token.Key, req.Method, c.Route) {
-			c.unauthorized()
+			// 로그인은 맞고 그 메뉴 권한만 없다 — 401 이면 화면이 로그아웃시켜 메뉴 하나 뺀 것으로 로그인이 막혔다
+			c.forbidden()
 			return
 		}
 	}

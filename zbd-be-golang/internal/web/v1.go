@@ -65,6 +65,15 @@ func (c *Ctx) unauthorized() {
 	c.Status(401).Send("401 Unauthorized")
 }
 
+// forbidden — 로그인은 됐지만 그 API 권한이 없을 때(메뉴 권한). 화면은 401 만 로그아웃으로 본다.
+func (c *Ctx) forbidden() {
+	if c.V1 {
+		c.Fail(http.StatusForbidden, ErrForbidden, "권한이 없습니다")
+		return
+	}
+	c.Status(403).JSON(jsx.Obj("code", "FAIL", "message", "권한이 없습니다"))
+}
+
 // ListQuery — 목록 요청 값(규약: ~/zbd-port/LIST_AUDIT.md).
 //
 //	?page=1&size=20&q=검색어&sort=createdAt,-title
