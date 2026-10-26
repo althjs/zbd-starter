@@ -92,6 +92,8 @@ export async function linkWorks(a: number, b: number, on: boolean) {
 
 export async function deleteItem(workId: number) {
 	const o = await api.delete(`/service/admin/work/${workId}`);
+	// 지운 카드는 바로 목록에서 뺀다 — 웹소켓이 없거나 신호가 늦어도 새로고침 없이
+	if (o.ok) work.items = work.items.filter((x) => x.workId !== workId);
 	return o.ok;
 }
 
