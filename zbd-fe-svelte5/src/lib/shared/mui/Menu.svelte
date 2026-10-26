@@ -9,9 +9,15 @@
 	let paper = $state<HTMLElement>();
 	let pos = $state({ top: 0, left: 0 });
 
+	// 연 순간의 자리 — 올렸을 때만 보이는 단추(⋯)는 메뉴가 뜨면 hover 가 풀려 사라져 크기 0 이 된다
+	let opened: DOMRect | null = null;
+	$effect.pre(() => {
+		opened = open && anchor ? anchor.getBoundingClientRect() : null;
+	});
 	function place() {
 		if (!anchor) return;
-		const r = anchor.getBoundingClientRect();
+		let r = anchor.getBoundingClientRect();
+		if (!r.width && !r.height && opened) r = opened;
 		const h = paper?.offsetHeight || 0;
 		const w = paper?.offsetWidth || 0;
 		pos = {
