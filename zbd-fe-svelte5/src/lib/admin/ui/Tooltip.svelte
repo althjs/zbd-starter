@@ -66,4 +66,7 @@
 		z-index: 1500;
 		pointer-events: none;
 	}
+	.adm-tip :global(.MuiTooltip-tooltip) {
+		white-space: pre-line; /* title 의 줄바꿈(\n)을 그대로 */
+	}
 </style>
