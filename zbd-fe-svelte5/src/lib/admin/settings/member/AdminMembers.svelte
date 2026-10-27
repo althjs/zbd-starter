@@ -81,11 +81,7 @@
 {#if memberList}
 	<MemberSearchForm sx={{ marginBottom: 8 }} {search} {getData} />
 	<Card sx={{ padding: 16 }}>
-		<MemberListTable {memberList} {doCopyDevLogin} onManage={(m) => (drawer = m)}>
-			{#snippet emailExtra(o)}
-
-			{/snippet}
-		</MemberListTable>
+		<MemberListTable {memberList} {doCopyDevLogin} onManage={(m) => (drawer = m)} />
 		<TablePagination sx={{ marginTop: 16 }} {search} getData={(s) => getData(s)} pageCount={Math.ceil(totalCount / search.pageSize)} />
 	</Card>
 {/if}

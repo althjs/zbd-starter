@@ -270,13 +270,6 @@
 		background: var(--gt-200, #f1f3f5);
 		color: var(--gt-700, #495057);
 	}
-	.dash-dot {
-		width: 8px;
-		height: 8px;
-		border-radius: 50%;
-		background: #e8590c;
-		flex-shrink: 0;
-	}
 	.dash-empty {
 		padding: 16px 0;
 		font-size: 14px;

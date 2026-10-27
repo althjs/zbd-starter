@@ -21,7 +21,7 @@
 	let { onChangeMember }: { onChangeMember?: (m: any) => void } = $props();
 
 	let member = $state<any>(null);
-	let orig = '';
+	let orig = $state('');
 	let mobileHelp = $state('');
 
 	function apply(oo: any) {
