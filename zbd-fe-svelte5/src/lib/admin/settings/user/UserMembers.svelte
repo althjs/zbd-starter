@@ -100,6 +100,8 @@
 	{/if}
 </Card>
 
+<!-- 미니홈피 플러그인이 이 빈 칸을 「주소 예약어」 칸으로 바꾼다 -->
+<!-- svelte-ignore block_empty -->
 {#if hostingId == 'ZBD'}
 
 {/if}
