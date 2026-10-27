@@ -48,7 +48,10 @@
 		{ key: 'status', name: '상태', width: 100, align: 'center', sticky: false },
 		...dyn,
 		...(dyn.some((c) => c.key === 'summary' || c.name === '요약') ? [] : [{ key: 'summary', name: '요약', width: 200, sticky: false }]),
-		...(dyn.some((c) => c.key === 'desc' || c.name === '설명') ? [] : [{ key: 'desc', name: '설명', width: 400, sticky: false }])
+		...(dyn.some((c) => c.key === 'desc' || c.name === '설명') ? [] : [{ key: 'desc', name: '설명', width: 400, sticky: false }]),
+		// 생성일(발행자 사진)·수정일 — 보드 설정에 없어도 늘(스타터 기본 보드엔 빠져 있었다, 2026-10-28)
+		...(dyn.some((c) => c.key === 'createdAt') ? [] : [{ key: 'createdAt', name: '생성일', width: 100, sticky: false }]),
+		...(dyn.some((c) => c.key === 'updatedAt') ? [] : [{ key: 'updatedAt', name: '수정일', width: 100, sticky: false }])
 	]);
 	const optOf = (k: string) => options.find((x) => x.key === k);
 	const cols = $derived.by(() => {
