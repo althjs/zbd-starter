@@ -345,11 +345,13 @@ if [ "${TUNNEL:-}" != 0 ]; then
 	ZBD_BIN="$(command -v zbd || true)"
 	[ -z "$ZBD_BIN" ] && [ -x "$HOME/.local/bin/zbd" ] && ZBD_BIN="$HOME/.local/bin/zbd"
 	# 구매 확인 — zbd 설정(토큰)으로 zbd.kr 에 한 번 묻는다. 안 됐으면 조용히 건너뛴다
-	if [ -n "$ZBD_BIN" ] && TUNNEL_HOST="$(node -e '
+	# 토큰 = 이 저장소의 폴더 로그인(.zbd/login.json, zbd 0.1.70~) → ZBD_CONFIG → 장비 로그인. 장비 번호는 장비 설정에서
+	if [ -n "$ZBD_BIN" ] && TUNNEL_HOST="$(ZBD_ROOT="$ROOT" node -e '
 		const fs = require("fs"), os = require("os"), path = require("path");
-		const c = [process.env.ZBD_CONFIG, path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config"), "zbd/config.json"), process.env.APPDATA && path.join(process.env.APPDATA, "zbd/config.json")].filter(Boolean).find((f) => fs.existsSync(f));
+		const c = [path.join(process.env.ZBD_ROOT || "", ".zbd/login.json"), process.env.ZBD_CONFIG, path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config"), "zbd/config.json"), process.env.APPDATA && path.join(process.env.APPDATA, "zbd/config.json")].filter(Boolean).find((f) => fs.existsSync(f));
 		if (!c) process.exit(1);
 		const cfg = JSON.parse(fs.readFileSync(c, "utf8"));
+		if (!cfg.machineId) { const d = [process.env.ZBD_CONFIG, path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config"), "zbd/config.json"), process.env.APPDATA && path.join(process.env.APPDATA, "zbd/config.json")].filter(Boolean).find((f) => fs.existsSync(f)); if (d) cfg.machineId = JSON.parse(fs.readFileSync(d, "utf8")).machineId; }
 		if (!cfg.token) process.exit(1);
 		fetch(process.env.ZBD_SERVER || cfg.server || "https://zbd.kr/service/plugin/cli", {
 			method: "POST", signal: AbortSignal.timeout(8000),
