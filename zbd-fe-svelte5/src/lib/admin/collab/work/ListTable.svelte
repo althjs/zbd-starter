@@ -13,7 +13,6 @@
 	import { media } from '../../media.svelte.ts';
 	import JsonDrawer from './JsonDrawer.svelte';
 	import RenderCell, { type Col } from './RenderCell.svelte';
-	import { withIssuer } from './codes.ts';
 	import { updateItem } from './store.svelte.ts';
 
 	let { items = [], groupKey, admins = [] }: { items?: WorkItem[]; groupKey: string; admins?: NotiMember[] } = $props();
@@ -48,7 +47,7 @@
 		{ key: 'category', name: '카테고리', width: 300, sticky: true },
 		{ key: 'title', name: '제목', width: 250, sticky: false },
 		{ key: 'status', name: '상태', width: 100, align: 'center', sticky: false },
-		...withIssuer(dyn),
+		...dyn,
 		...(dyn.some((c) => c.key === 'summary' || c.name === '요약') ? [] : [{ key: 'summary', name: '요약', width: 200, sticky: false }]),
 		...(dyn.some((c) => c.key === 'desc' || c.name === '설명') ? [] : [{ key: 'desc', name: '설명', width: 400, sticky: false }]),
 		// 생성일(발행자 사진)·수정일 — 보드 설정에 없어도 늘(스타터 기본 보드엔 빠져 있었다, 2026-10-28)

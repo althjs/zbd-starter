@@ -32,7 +32,6 @@
 	import MarkdownShapeEditor from './MarkdownShapeEditor.svelte';
 	import MemoShapeEditor from './MemoShapeEditor.svelte';
 	import RenderCell, { type Col } from './RenderCell.svelte';
-	import { withIssuer } from './codes.ts';
 	import ShapeList from './ShapeList.svelte';
 	import { deleteItem, updateItem, updateShape } from './store.svelte.ts';
 
@@ -51,13 +50,13 @@
 	const codeIds = $derived(getWorkCodeIds(groupKey));
 	const setting = $derived(getWorkSettings(groupKey));
 	const writeable = $derived(isWorkWriteable(groupKey, profile));
-	const cols = $derived(
-		withIssuer(
-			getWorkColumns(groupKey, ['status']).map(
-				(c) => ({ key: c.key || `column_${c.id}`, name: c.name, width: Number(c.value) || 150, id: c.id, items: c.items, inputType: c.inputType, sticky: false }) as Col
-			)
-		)
-	);
+	const cols = $derived.by(() => {
+		const list = getWorkColumns(groupKey, ['status']).map(
+			(c) => ({ key: c.key || `column_${c.id}`, name: c.name, width: Number(c.value) || 150, id: c.id, items: c.items, inputType: c.inputType, sticky: false }) as Col
+		);
+		// 생성일(발행자 사진·이름) — 보드 설정에 없어도 상세 머리에 늘(목록 표와 같게)
+		return list.some((c) => c.key === 'createdAt') ? list : [...list, { key: 'createdAt', name: '생성일', width: 140, sticky: false } as Col];
+	});
 	const statusItems = $derived(
 		Object.entries(getWorkStatusMap(groupKey))
 			.map(([key, value]) => ({ key, value }))

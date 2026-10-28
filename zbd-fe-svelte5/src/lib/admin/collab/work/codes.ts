@@ -119,11 +119,3 @@ export function getWorkSharedHostingIds(groupKey: string): string[] {
 	const ids = s?.sharedHostingIds ?? s?.sharedCompanyIds; // 옛 이름 sharedCompanyIds — 2026-10 옮기는 기간
 	return Array.isArray(ids) ? ids.filter((x: any) => typeof x === 'string') : [];
 }
-
-/** 발행자 칸 — 담당자(ADMINS) 칸 바로 뒤, 담당자 칸이 없으면 맨 앞(목록·상세 머리 같이) */
-export function withIssuer<T extends { key: string; inputType?: string }>(list: T[]): T[] {
-	if (list.some((c) => c.key === 'issuer')) return list;
-	const col = { key: 'issuer', name: '발행자', width: 120, sticky: false } as unknown as T;
-	const i = list.findIndex((c) => c.inputType === 'ADMINS');
-	return i === -1 ? [col, ...list] : [...list.slice(0, i + 1), col, ...list.slice(i + 1)];
-}

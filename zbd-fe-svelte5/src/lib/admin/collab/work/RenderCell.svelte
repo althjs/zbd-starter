@@ -114,24 +114,16 @@
 		codeIds={codeIds?.length && st.codeId > 0 ? [...codeIds, st.codeId] : null}
 		onchange={(v) => onValueChange(o, 'status', v)}
 	/>
-{:else if col.key === 'issuer'}
-	{@const a = admins.find((m) => m.adminId === o.adminId)}
-	{#if a?.adminId}
-		<span style="display:flex;align-items:center;gap:6px;font-size:12px;min-width:0">
-			<Av src={a.profileImage || ''} size={22} sx={{ backgroundColor: 'var(--zc-eee, #eee)', flexShrink: 0 }} />
-			<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{a.name}</span>
-		</span>
-	{/if}
 {:else if col.key === 'createdAt'}
 	{@const d = dt(o.createdAt)}
 	{#if d[0]}
 		{@const a = admins.find((m) => m.adminId === o.adminId)}
-		<div class="MuiStack-root" style="display:flex;flex-direction:column">
-			<p class="MuiTypography-root MuiTypography-body1" style="font-size:12px">{d[0]}</p>
-			<span class="MuiTypography-root MuiTypography-caption" style="display:flex;align-items:center;color:var(--gt-700, #909090)">
-				{#if a?.adminId}<Tooltip title={a.name} placement="top"><Av src={a.profileImage || ''} size={15} sx={{ marginRight: 4, backgroundColor: 'var(--zc-eee, #eee)' }} /></Tooltip>{/if}
-				{d[1] || ''}
-			</span>
+		<div class="MuiStack-root" style="display:flex;flex-direction:row;align-items:center;gap:8px">
+			{#if a?.adminId}<Tooltip title={a.name} placement="top"><Av src={a.profileImage || ''} size={30} sx={{ backgroundColor: 'var(--zc-eee, #eee)', flexShrink: 0 }} /></Tooltip>{/if}
+			<div class="MuiStack-root" style="display:flex;flex-direction:column;min-width:0">
+				<p class="MuiTypography-root MuiTypography-body1" style="font-size:12px;white-space:nowrap">{d[0]}</p>
+				<span class="MuiTypography-root MuiTypography-caption" style="color:var(--gt-700, #909090);white-space:nowrap">{a?.name ? `${a.name} · ` : ''}{d[1] || ''}</span>
+			</div>
 		</div>
 	{/if}
 {:else if col.key === 'updatedAt'}
