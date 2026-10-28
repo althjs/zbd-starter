@@ -219,6 +219,12 @@ func serve(a *app.App, rt *route, prefix string, params map[string]any, w http.R
 			return
 		}
 	}
+	var held *heldWriter
+	if rt.opts.Changes && req.Method != http.MethodGet {
+		held = &heldWriter{w: w}
+		c.W = held
+		defer held.release() // 핸들러가 멈춰도(recover) 쓴 응답은 나간다
+	}
 	rt.h(c)
 	if changeNotifies(rt.opts, req.Method, c) {
 		onChanged(a, req.Context(), c.Token.HostingID)
