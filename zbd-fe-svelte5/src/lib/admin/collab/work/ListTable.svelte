@@ -13,6 +13,7 @@
 	import { media } from '../../media.svelte.ts';
 	import JsonDrawer from './JsonDrawer.svelte';
 	import RenderCell, { type Col } from './RenderCell.svelte';
+	import { withIssuer } from './codes.ts';
 	import { updateItem } from './store.svelte.ts';
 
 	let { items = [], groupKey, admins = [] }: { items?: WorkItem[]; groupKey: string; admins?: NotiMember[] } = $props();
@@ -41,12 +42,13 @@
 				}) as Col
 		)
 	);
+	// 발행자(카드를 만든 사람) — 담당자 바로 뒤, 담당자 칸이 없으면 앞(상태 다음)에(2026-10-28 대표 「발행자가 없잖아」)
 	const configs = $derived<Col[]>([
 		{ key: 'id', name: 'ID', width: 70, align: 'center', sticky: true },
 		{ key: 'category', name: '카테고리', width: 300, sticky: true },
 		{ key: 'title', name: '제목', width: 250, sticky: false },
 		{ key: 'status', name: '상태', width: 100, align: 'center', sticky: false },
-		...dyn,
+		...withIssuer(dyn),
 		...(dyn.some((c) => c.key === 'summary' || c.name === '요약') ? [] : [{ key: 'summary', name: '요약', width: 200, sticky: false }]),
 		...(dyn.some((c) => c.key === 'desc' || c.name === '설명') ? [] : [{ key: 'desc', name: '설명', width: 400, sticky: false }]),
 		// 생성일(발행자 사진)·수정일 — 보드 설정에 없어도 늘(스타터 기본 보드엔 빠져 있었다, 2026-10-28)
@@ -55,9 +57,16 @@
 	]);
 	const optOf = (k: string) => options.find((x) => x.key === k);
 	const cols = $derived.by(() => {
-		const rank = (k: string) => {
+		// 저장한 보기 옵션에 없는 새 열은 맨 끝이 아니라 기본 순서의 자리(앞 열 바로 뒤)에
+		const rank = (k: string): number => {
 			const i = options.findIndex((x) => x.key === k);
-			return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+			if (i !== -1) return i;
+			const at = configs.findIndex((c) => c.key === k);
+			for (let j = at - 1; j >= 0; j--) {
+				const p = options.findIndex((x) => x.key === configs[j].key);
+				if (p !== -1) return p + 0.5 + at / 1000;
+			}
+			return -1 + at / 1000;
 		};
 		const vis = configs.filter((c) => optOf(c.key)?.use !== false).sort((a, b) => rank(a.key) - rank(b.key));
 		let left = 0;

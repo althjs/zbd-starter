@@ -32,6 +32,7 @@
 	import MarkdownShapeEditor from './MarkdownShapeEditor.svelte';
 	import MemoShapeEditor from './MemoShapeEditor.svelte';
 	import RenderCell, { type Col } from './RenderCell.svelte';
+	import { withIssuer } from './codes.ts';
 	import ShapeList from './ShapeList.svelte';
 	import { deleteItem, updateItem, updateShape } from './store.svelte.ts';
 
@@ -51,8 +52,10 @@
 	const setting = $derived(getWorkSettings(groupKey));
 	const writeable = $derived(isWorkWriteable(groupKey, profile));
 	const cols = $derived(
-		getWorkColumns(groupKey, ['status']).map(
-			(c) => ({ key: c.key || `column_${c.id}`, name: c.name, width: Number(c.value) || 150, id: c.id, items: c.items, inputType: c.inputType, sticky: false }) as Col
+		withIssuer(
+			getWorkColumns(groupKey, ['status']).map(
+				(c) => ({ key: c.key || `column_${c.id}`, name: c.name, width: Number(c.value) || 150, id: c.id, items: c.items, inputType: c.inputType, sticky: false }) as Col
+			)
 		)
 	);
 	const statusItems = $derived(

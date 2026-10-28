@@ -17,8 +17,21 @@
 	function show() {
 		// 저장된 순서 먼저, 없는 열은 뒤에
 		const saved = options || [];
-		const rest = defaultOptions.filter((d) => !saved.find((s) => s.key == d.key));
-		list = [...saved.filter((s) => defaultOptions.find((d) => d.key == s.key)).map((s) => ({ ...defaultOptions.find((d) => d.key == s.key)!, ...s })), ...rest].map((x) => ({ ...x }));
+		const out = saved.filter((s) => defaultOptions.find((d) => d.key == s.key)).map((s) => ({ ...defaultOptions.find((d) => d.key == s.key)!, ...s }));
+		// 저장 뒤 새로 생긴 열은 기본 순서의 자리(앞 열 바로 뒤)에 — 표(ListTable rank)와 같은 순서
+		defaultOptions.forEach((d, i) => {
+			if (out.find((x) => x.key == d.key)) return;
+			let at = 0;
+			for (let j = i - 1; j >= 0; j--) {
+				const p = out.findIndex((x) => x.key == defaultOptions[j].key);
+				if (p !== -1) {
+					at = p + 1;
+					break;
+				}
+			}
+			out.splice(at, 0, d);
+		});
+		list = out.map((x) => ({ ...x }));
 		open = true;
 	}
 	function move(i: number, d: number) {

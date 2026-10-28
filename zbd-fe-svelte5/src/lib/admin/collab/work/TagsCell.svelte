@@ -26,7 +26,7 @@
 	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
 	<ul class="MuiStack-root" style="display:flex;flex-direction:row;flex-wrap:wrap;list-style:none;padding:4px 0;margin:0 0 0 -4.8px;cursor:pointer" onclick={() => !readonly && (open = true)}>
 		{#each list as t, i (i)}
-			<li><Chip size="small" label={t} sx={{ borderRadius: 4 }} /></li>
+			<li style="margin-left:4.8px;margin-bottom:4px"><Chip size="small" label={t} sx={{ borderRadius: 4 }} /></li>
 		{:else}
 			<span class="MuiTypography-root MuiTypography-caption" style="margin-left:8px;padding:4px 0;color:var(--adm-text2)">{emptyText}</span>
 		{/each}

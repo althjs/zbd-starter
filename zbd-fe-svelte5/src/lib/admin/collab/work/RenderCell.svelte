@@ -114,6 +114,14 @@
 		codeIds={codeIds?.length && st.codeId > 0 ? [...codeIds, st.codeId] : null}
 		onchange={(v) => onValueChange(o, 'status', v)}
 	/>
+{:else if col.key === 'issuer'}
+	{@const a = admins.find((m) => m.adminId === o.adminId)}
+	{#if a?.adminId}
+		<span style="display:flex;align-items:center;gap:6px;font-size:12px;min-width:0">
+			<Av src={a.profileImage || ''} size={22} sx={{ backgroundColor: 'var(--zc-eee, #eee)', flexShrink: 0 }} />
+			<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{a.name}</span>
+		</span>
+	{/if}
 {:else if col.key === 'createdAt'}
 	{@const d = dt(o.createdAt)}
 	{#if d[0]}
