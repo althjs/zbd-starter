@@ -4,13 +4,14 @@
 	 * PC(≥1280) 는 고정 메뉴(펼침 280 / 축약 88 / 숨김), 그보다 좁으면 서랍(☰) — 주소가 바뀌면 서랍을 닫는다.
 	 * 지금 메뉴(페이지 제목·이동 경로) 맞추기도 여기서(syncCurrentNav).
 	 */
+	import { untrack } from 'svelte';
 	import { page } from '$app/state';
 	import Drawer from '#lib/shared/mui/Drawer.svelte';
 	import { cx, sx as toClass } from '#lib/shared/mui/sx.ts';
 	import { SIDE_NAV_MINI_WIDTH, SIDE_NAV_WIDTH, TOP_NAV_HEIGHT } from '../config.ts';
 	import { media } from '../media.svelte.ts';
 	import { getCompanyName, isSuperAdmin } from '../meta.svelte.ts';
-	import { nav, setOpenSideNav, syncCurrentNav, toggleSideNavByUser } from '../nav.svelte.ts';
+	import { nav, restoreSideNav, setOpenSideNav, syncCurrentNav, toggleSideNavByUser } from '../nav.svelte.ts';
 	import { admin } from '../profile.svelte.ts';
 	import type { NavItem } from '../types.ts';
 	import SvgIcon from '../ui/SvgIcon.svelte';
@@ -47,6 +48,10 @@
 	$effect(() => {
 		void pathname;
 		if (!media.lgUp) setOpenSideNav(false);
+	});
+	// PC 폭이 되면(미리 띄운 화면이 보일 때·창을 넓힐 때) 저장된 상태로
+	$effect(() => {
+		if (media.lgUp) untrack(restoreSideNav);
 	});
 
 	let searchInput = $state('');

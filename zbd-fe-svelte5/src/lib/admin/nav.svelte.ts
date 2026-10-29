@@ -29,6 +29,16 @@ export const nav = $state({
 	base: null as CurrentNav | null
 });
 
+/**
+ * 넓은 화면(PC)이 되면 저장해 둔 펼침·축약·숨김으로 되돌린다 — 좁은 화면에서 서랍을 닫은 것이 PC 메뉴까지 닫아 두지 않게.
+ * 주소창에 치면 크롬이 화면을 미리 띄워 두는(prerender) 동안 폭이 좁게 잡혀 메뉴가 닫힌 채로 열렸다(2026-10-30, 새로고침하면 보임)
+ */
+export function restoreSideNav() {
+	const m = loadMode();
+	nav.open = m != 'hidden';
+	nav.mini = m == 'mini';
+}
+
 export function setOpenSideNav(tf: boolean) {
 	nav.open = tf;
 }
