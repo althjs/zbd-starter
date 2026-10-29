@@ -17,9 +17,10 @@ func setLoginDevice(c *web.Ctx, q db.Execer, userID any, memberType string, emai
 	if memberType == "" {
 		memberType = "X"
 	}
-	_, err := db.Exec(context.Background(), q, `INSERT INTO login_devices (userId, memberType, email, browserUid, hostingId, ip, lastLoginedAt) VALUES (?, ?, ?, ?, ?, ?, current_timestamp())
-  ON DUPLICATE KEY UPDATE 
+	_, err := db.Exec(context.Background(), q, `INSERT INTO login_devices (userId, memberType, email, browserUid, hostingId, ip, lastLoginedAt, lastActivedAt) VALUES (?, ?, ?, ?, ?, ?, current_timestamp(), current_timestamp())
+  ON DUPLICATE KEY UPDATE
   lastLoginedAt = current_timestamp(),
+  lastActivedAt = current_timestamp(),
   ip = ?
   `, userID, memberType, c.App.PII.Hash("email", email), browserUID, hostingID, ip, ip)
 	return err

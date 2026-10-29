@@ -88,7 +88,7 @@ func adminLoginDevices(c *web.Ctx) {
 	pageSize := orNum(jsParseInt(qs("pageSize", "20")), 20)
 	orderBy := qs("orderBy", "lastLoginedAt")
 	switch orderBy {
-	case "lastLoginedAt", "createdAt", "email", "memberType":
+	case "lastLoginedAt", "lastActivedAt", "createdAt", "email", "memberType":
 	default:
 		orderBy = "lastLoginedAt"
 	}
@@ -137,6 +137,7 @@ func adminLoginDevices(c *web.Ctx) {
 	sqlText := `SELECT d.userId, d.memberType, d.browserUid, d.ip, d.hostingId
     , UNIX_TIMESTAMP(d.createdAt)*1000 as createdAt
     , UNIX_TIMESTAMP(d.lastLoginedAt)*1000 as lastLoginedAt
+    , UNIX_TIMESTAMP(d.lastActivedAt)*1000 as lastActivedAt
     , u.email as uEmail`
 	if tab == "U" {
 		sqlText += `, u.nickname, u.name as name, u.groupId`

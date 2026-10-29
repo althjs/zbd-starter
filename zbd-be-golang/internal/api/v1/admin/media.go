@@ -129,7 +129,7 @@ func files(c *web.Ctx) {
 	c.SendList(items, total, lq)
 }
 
-var deviceSort = map[string]string{"lastLoginedAt": "d.lastLoginedAt", "createdAt": "d.createdAt", "userId": "d.userId"}
+var deviceSort = map[string]string{"lastLoginedAt": "d.lastLoginedAt", "lastActivedAt": "d.lastActivedAt", "createdAt": "d.createdAt", "userId": "d.userId"}
 
 // loginDevices — 로그인 기기. tab=U(회원, 기본) | A(관리자). q: 회원 = 개인정보 규칙(v1x.MemberSearch), 관리자 = 번호.
 func loginDevices(c *web.Ctx) {
@@ -168,6 +168,7 @@ func loginDevices(c *web.Ctx) {
 	ctx := c.Context()
 	rows, total, err := v1x.Page(ctx, c.App.DB, `SELECT d.userId, d.memberType, d.browserUid, d.ip,
   UNIX_TIMESTAMP(d.createdAt)*1000 AS createdAt, UNIX_TIMESTAMP(d.lastLoginedAt)*1000 AS lastLoginedAt,
+  UNIX_TIMESTAMP(d.lastActivedAt)*1000 AS lastActivedAt,
   u.email, u.nickname, u.name, u.groupId`, from, w, lq)
 	if err != nil {
 		c.Ecb(err)

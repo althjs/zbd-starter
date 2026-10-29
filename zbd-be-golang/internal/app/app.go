@@ -61,6 +61,10 @@ func New(ctx context.Context) (*App, error) {
 		return nil, err
 	}
 	a := &App{Cfg: cfg, DB: d, Settings: settings.New(), Admin: adminauth.New(), Started: time.Now()}
+	// 로그인 기기에 「마지막 활동 시각」 칸 — 세션 쿠키가 롤링 갱신될 때(1시간마다) 기록한다. 처음 뜰 때 한 번(이미 있으면 무시).
+	if _, err := db.Exec(ctx, d, `ALTER TABLE login_devices ADD COLUMN IF NOT EXISTS lastActivedAt TIMESTAMP NULL DEFAULT NULL AFTER lastLoginedAt`); err != nil {
+		log.Printf("⚠ login_devices.lastActivedAt 추가 실패(이미 있으면 무시 가능): %v", err)
+	}
 	if k, err := pii.New(cfg.Get("PII_ENC_KEY_V1"), cfg.Get("PII_INDEX_KEY")); err == nil {
 		a.PII = k
 	} else {
@@ -94,6 +98,19 @@ func (a *App) RealtimeStatus(kind string) *jsx.OrderedMap {
 		return nil
 	}
 	return a.Realtime.Status(kind)
+}
+
+// TouchLoginActivity — 이 브라우저가 지금 활동 중(세션 쿠키가 롤링 갱신될 때 호출). 요청을 막지 않게 뒤에서.
+func (a *App) TouchLoginActivity(userID, memberType, browserUID, hostingID string) {
+	if a.DB == nil || memberType == "" || browserUID == "" {
+		return
+	}
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_, _ = db.Exec(ctx, a.DB, `UPDATE login_devices SET lastActivedAt = current_timestamp()
+      WHERE memberType = ? AND userId = ? AND browserUid = ? AND hostingId = ?`, memberType, userID, browserUID, hostingID)
+	}()
 }
 
 // EveryMinute — 1분마다 할 일(알림 예약 발송·오래된 기록 정리 등). 설정 RUN_JOBS=true 일 때만 돈다(개발·시험 서버에선 안 돈다).

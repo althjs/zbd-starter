@@ -206,6 +206,11 @@ func (c *Ctx) loadSession() {
 	c.fromCookie = true
 	if now-t.LastActive() > sessionTouchMs {
 		c.setSessionCookie(t.Refreshed(now, c.App.Cfg.AESKey, c.App.Cfg.AESIV), c.SessionDays(t.HostingID))
+		uid := t.BrowserUID
+		if uid == auth.AnyBrowser {
+			uid = t.HeaderUID
+		}
+		c.App.TouchLoginActivity(t.Key, t.MemberType, uid, t.HostingID) // 접속 통계 「마지막 활동일」
 	}
 }
 

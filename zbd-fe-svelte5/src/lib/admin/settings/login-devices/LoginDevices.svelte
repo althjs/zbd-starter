@@ -83,6 +83,7 @@
 					<th class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall">브라우저</th>
 					<th class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall">접속 기기</th>
 					<th class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall">접속일</th>
+					<th class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall">마지막 활동일</th>
 					<th class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall">BrowserUID</th>
 				</tr>
 			</thead>
@@ -100,6 +101,7 @@
 						<td class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall">{o.env?.browser || '-'}</td>
 						<td class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall">{o.env?.os || '-'}</td>
 						<td class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall">{date(o.lastLoginedAt)}</td>
+						<td class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall">{o.lastActivedAt ? date(o.lastActivedAt) : '-'}</td>
 						<td class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall">{o.browserUid || '-'}</td>
 					</tr>
 				{/each}
