@@ -96,3 +96,17 @@ func TestPageNameOf(t *testing.T) {
 		}
 	}
 }
+
+func TestAbsURL(t *testing.T) {
+	for _, c := range [][3]string{
+		{"/upload/ZBD/site/og.jpg", "https://81.zbd.co.kr/app/menu", "https://81.zbd.co.kr/upload/ZBD/site/og.jpg"},
+		{"/upload/a.png", "https://a.kr", "https://a.kr/upload/a.png"},
+		{"https://cdn.kr/a.png", "https://a.kr", "https://cdn.kr/a.png"},
+		{"//cdn.kr/a.png", "https://a.kr", "//cdn.kr/a.png"},
+		{"/upload/a.png", "", "/upload/a.png"},
+	} {
+		if got := absURL(c[0], c[1]); got != c[2] {
+			t.Errorf("absURL(%q,%q)=%q want %q", c[0], c[1], got, c[2])
+		}
+	}
+}

@@ -225,7 +225,7 @@ func buildDoc(s *seoData, globalHTML, templateCSS, preloadTags, globalHTMLBodyTo
 		w("    <meta property=\"og:site_name\" content=\"", s.siteName, "\" />\n")
 	}
 	w("    <meta property=\"og:title\" content=\"", title, "\" />\n")
-	w("    <meta property=\"og:image\" content=\"", image, "\" />\n")
+	w("    <meta property=\"og:image\" content=\"", escAttr(absURL(image, ogURL)), "\" />\n")
 	w("    <meta property=\"og:description\" content=\"", desc, "\" />\n")
 	if k := siteMeta.V("webMasterToolNaverKey"); jsx.Truthy(k) {
 		w("    <meta name=\"naver-site-verification\" content=\"", jsx.Str(k), "\" />\n")
@@ -292,6 +292,21 @@ func buildDoc(s *seoData, globalHTML, templateCSS, preloadTags, globalHTMLBodyTo
 }
 
 // orDefault — (v || d) 문자열
+// absURL — 「/upload/…」 같은 상대 주소를 사이트 주소(base)로 완성한다. 카톡·페이스북 미리보기는 og:image 가 절대 주소여야 읽는다.
+func absURL(v, base string) string {
+	if !strings.HasPrefix(v, "/") || strings.HasPrefix(v, "//") {
+		return v
+	}
+	i := strings.Index(base, "://")
+	if i < 0 {
+		return v
+	}
+	if j := strings.Index(base[i+3:], "/"); j >= 0 {
+		base = base[:i+3+j]
+	}
+	return base + v
+}
+
 func orDefault(v any, d string) string {
 	if !jsx.Truthy(v) {
 		return d
