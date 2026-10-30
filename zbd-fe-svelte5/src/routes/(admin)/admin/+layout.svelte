@@ -25,7 +25,14 @@
 		if (admin.loaded && (p == '/admin' || p == '/admin/')) authCheckAndRedirect(admin.menus, p);
 	});
 	$effect(() => {
-		if (SINGLE_APP && !SINGLE_APP.paths.some((p) => page.url.pathname.indexOf(p) == 0)) goto(SINGLE_APP.home, { replaceState: true });
+		if (SINGLE_APP && !SINGLE_APP.paths.some((p) => page.url.pathname.indexOf(p) == 0)) {
+			// 메신저 앱에서 연 고객 상담 주소(알림 링크) = 메신저의 고객 상담 탭(고객 상담 채팅 플러그인이 있을 때)
+			if (SINGLE_APP.key == 'messenger' && page.url.pathname.indexOf('/admin/chat/support') == 0) {
+				const q = new URLSearchParams(page.url.search);
+				q.set('view', 'support');
+				goto(`${SINGLE_APP.home}?${q}`, { replaceState: true });
+			} else goto(SINGLE_APP.home, { replaceState: true });
+		}
 	});
 	// 메신저 앱에서 업무 채팅 알림·링크(/admin/claude/N?session=)를 열면 업무 채팅 화면 대신 메신저 안 그 대화로(2026-10-21 oye)
 	$effect(() => {

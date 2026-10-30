@@ -28,9 +28,14 @@
 	import OutlinedSelect from '../ui/OutlinedSelect.svelte';
 	import SiteBasicInfoForm from './SiteBasicInfoForm.svelte';
 	import SettingGroup from '../ui/SettingGroup.svelte';
+	import type { Component } from 'svelte';
 	import SettingRow from '../ui/SettingRow.svelte';
 	import SiteSuperAdminSettingForm from './super/SiteSuperAdminSettingForm.svelte';
 
+	// 고객 상담 설정(알림 담당자·AI 응대·문의 그룹) — 「고객 상담 채팅」 플러그인 부품. 없으면 칸이 안 생긴다
+	const supportSetMods = import.meta.glob<{ default: Component<any> }>('../../collab/support/SupportSettings.svelte', { eager: true });
+	const SupportSettingsC = Object.values(supportSetMods)[0]?.default;
+	const hasSupport = Object.keys(supportSetMods).length > 0;
 	let { meta, hostingId, onChange }: { meta: any; hostingId: string; onChange: (m: any) => void } = $props();
 	const siteDefault = { title: '', logo: null, favicon: null };
 	let json = $state<any>({});
@@ -251,9 +256,10 @@
 			{@render row('본문 배경색', bg, 360, 1)}
 			{@render row('본문 배경색(다크)', bgDark, 360, 1)}
 		</SettingGroup>
-		<SettingGroup title="관리자 로그인" desc="로그인 유지 기간">
+		<SettingGroup title={hasSupport ? '관리자 로그인 · 알림' : '관리자 로그인'} desc={hasSupport ? '로그인 유지와 고객 문의 알림' : '로그인 유지 기간'}>
 			{@render row('관리자 로그인 유지 기간', adminSession)}
 			{@render row('사무실 IP', officeIps)}
+			{#if SupportSettingsC}<SupportSettingsC {json} {set} {hostingId} />{/if}
 		</SettingGroup>
 		{#if showImages}
 			<SettingGroup title="관리자 로고 · 파비콘" desc="관리자 화면 왼쪽 위 로고와 탭 아이콘" wrap>
