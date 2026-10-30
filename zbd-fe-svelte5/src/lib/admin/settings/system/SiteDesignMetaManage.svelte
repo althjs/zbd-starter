@@ -209,7 +209,7 @@
 				<InfoTip label="OG 이미지" tip={TIPS['og']} />
 				<p class="MuiTypography-root MuiTypography-caption bd">카톡·SNS 링크 미리보기 · 1200×630 권장</p>
 				<ImagePicker
-					size={{ width: 800, height: 400 }}
+					size={{ width: 1200, height: 630 }}
 					image={d.image}
 					folder="site"
 					accept=".jpg, .jpeg, .png, .webp, .gif, .svg, .ico"

@@ -104,14 +104,16 @@
 
 	// 인코딩된 영상(…_480.mp4)이 있으면 그 표지 그림(….webp)은 숨긴다 — 같은 장면이 사진·영상으로 두 번 보여 표지를 사진으로 고르는 일이 있었다(2026-10-04)
 	const videoPosters = $derived(new Set((files || []).filter((f) => /_480\.mp4$/.test(f.name)).map((f) => f.name.replace('_480.mp4', '.webp'))));
+	const fits = (f: ImageFile) => f.size?.width == size.width && (size.height == 'auto' || f.size?.height == size.height);
 	/** 이 크기에 맞는 것만(+ 그룹) — 이름순 */
 	const images = $derived(
 		(files || [])
 			.filter((f) => accept.includes(extOf(f.name)) || /\.mp4$/.test(f.name))
 			.filter((f) => !videoPosters.has(f.name) && !/_share\.jpg$/.test(f.name)) // 동영상 공유용 정사각 그림도 숨김
-			.filter((f) => size.width == 'all' || (f.size?.width == size.width && (size.height == 'auto' || f.size?.height == size.height)))
+			// 자르지 않는 칸(disableCrop)은 크기 이름표가 실제 크기가 아니다 — 폴더의 그림을 다 보이고 이 칸 크기를 앞에(2026-10-30 다른 이름표로 올린 로고·OG 가 「올린 사진이 없습니다」 로 보였다)
+			.filter((f) => size.width == 'all' || disableCrop || fits(f))
 			.filter((f) => !params?.group || f.name.includes(`_group${params.group}`))
-			.sort((a, b) => a.name.localeCompare(b.name))
+			.sort((a, b) => (disableCrop ? Number(fits(b)) - Number(fits(a)) : 0) || a.name.localeCompare(b.name))
 	);
 
 	export function open_(p: any = null) {

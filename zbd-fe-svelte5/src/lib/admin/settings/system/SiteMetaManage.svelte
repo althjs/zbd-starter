@@ -226,7 +226,7 @@
 			/>
 			<p class="MuiTypography-root MuiTypography-caption">그림 — 1200×630 권장, 비우면 사이트 OG 이미지</p>
 			<ImagePicker
-				size={{ width: 800, height: 400 }}
+				size={{ width: 1200, height: 630 }}
 				image={json.adminSeo?.image}
 				{hostingId}
 				folder="site"
