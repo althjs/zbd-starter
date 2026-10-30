@@ -5,6 +5,19 @@
  *   number(12345)         → "12,345"
  */
 const YOIL = ['일', '월', '화', '수', '목', '금', '토'];
+/** 언어별 요일(사용자 화면 다국어 — 사이트 언어 키 en·ja·cn·fr). 없는 언어는 한국어 */
+const YOIL_LANG: Record<string, string[]> = {
+	en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+	ja: ['日', '月', '火', '水', '木', '金', '土'],
+	cn: ['日', '一', '二', '三', '四', '五', '六'],
+	fr: ['dim', 'lun', 'mar', 'mer', 'jeu', 'ven', 'sam']
+};
+/** 지금 화면 언어 — 사용자 다국어(user/i18n)가 globalThis.__zbdFormatLang 에 함수를 건다(import 로 묶지 않는다 — 다국어 플러그인 꾸러미가 그 파일만 스타터에 붙인다). 없으면 ko */
+const langOf = (): string => {
+	const f = (globalThis as any).__zbdFormatLang;
+	return typeof f == 'function' ? f() : 'ko';
+};
+const yoil = (w: number) => (YOIL_LANG[langOf()] || YOIL)[w];
 const pad = (n: number) => (n < 10 ? '0' : '') + n;
 
 /** 한국 시간의 연·월·일·요일·시·분 */
@@ -27,7 +40,7 @@ export function date(v: any, excludeHM = false) {
 	if (String(v).length == 10 && !/^\d{10}$/.test(String(v))) excludeHM = true;
 	const k = kst(v);
 	if (!k) return '';
-	let s = `${k.y}.${pad(k.m)}.${pad(k.d)}(${YOIL[k.w]})`;
+	let s = `${k.y}.${pad(k.m)}.${pad(k.d)}(${yoil(k.w)})`;
 	if (!excludeHM) s += ` ${pad(k.h)}:${pad(k.mi)}`;
 	return s;
 }
@@ -85,5 +98,5 @@ export function shortDate(v: any, excludeHM = false) {
 	if (isNaN(d.getTime())) return '';
 	let s = `${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
 	if (!excludeHM) s += ` ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-	return s + ` (${YOIL[d.getDay()]})`;
+	return s + ` (${yoil(d.getDay())})`;
 }
