@@ -74,6 +74,27 @@ var reCatPath = regexp.MustCompile(`^[A-Za-z0-9_]{1,30}(\.[A-Za-z0-9_]{1,30}){0,
 var reTags = regexp.MustCompile(`<[^>]*>|&nbsp;|[#*>\x60_~\[\]()]+`)
 var reSpaces = regexp.MustCompile(`\s+`)
 
+// reLang — 목록 ?lang= (사이트 언어 키 en·ja·cn·fr 같은 두 글자)
+var reLang = regexp.MustCompile(`^[a-z]{2}$`)
+
+// postLang — 글의 그 언어 제목·본문(관리자 글 편집의 언어 탭 = 데이터 칸 i18n.{언어}). 번역이 빈 칸은 기본 글 — 화면 shared/post-i18n.ts 와 같은 규칙
+func postLang(title, body, i18nJSON string) (string, string) {
+	if i18nJSON == "" {
+		return title, body
+	}
+	t, _ := jsx.ParseOr(i18nJSON, nil).(*jsx.OrderedMap)
+	if t == nil {
+		return title, body
+	}
+	if s := t.S("title"); strings.TrimSpace(s) != "" {
+		title = s
+	}
+	if s := t.S("body"); strings.TrimSpace(s) != "" {
+		body = s
+	}
+	return title, body
+}
+
 // viewsSQL — 글 조회수. post_views 는 글·시각(시간 단위)마다 한 줄이라 글마다 합친다
 // (예전 join 은 groupKey 칸을 게시판으로 맞춰 늘 0 이었다 — 그 칸엔 「2026-09-25 10:00」 같은 시각이 들어 있다)
 const viewsSQL = "(SELECT IFNULL(SUM(x.pv), 0) FROM post_views x WHERE x.postId = p.postId)"
@@ -146,7 +167,12 @@ func boardPosts(c *web.Ctx) {
 		w.Add("(p.title LIKE ? OR JSON_UNQUOTE(JSON_EXTRACT(p."+b.dataColumn+", '$.body')) LIKE ?)", like, like)
 	}
 	ctx := c.Context()
-	rows, total, err := v1x.Page(ctx, c.App.DB, `SELECT p.postId, p.groupKey, p.groupSubKey, p.title, p.userId,
+	// ?lang= 이면 그 언어 제목·본문도(번역이 없으면 기본 글) — 언어 키는 위 정규식만 통과해 SQL 경로에 그대로 넣는다
+	langSQL := ""
+	if l := c.Q("lang"); l != "" && l != "ko" && reLang.MatchString(l) {
+		langSQL = "JSON_EXTRACT(p." + b.dataColumn + ", '$.i18n." + l + "') AS i18n,\n  "
+	}
+	rows, total, err := v1x.Page(ctx, c.App.DB, `SELECT p.postId, p.groupKey, p.groupSubKey, p.title, p.userId, `+langSQL+`
   UNIX_TIMESTAMP(p.createdAt)*1000 AS createdAt, UNIX_TIMESTAMP(p.updatedAt)*1000 AS updatedAt,
   JSON_EXTRACT(p.json, '$.isFixTop') AS isFixTop,
   JSON_EXTRACT(p.`+b.dataColumn+`, '$.image') AS image,
@@ -187,7 +213,8 @@ func postCards(c *web.Ctx, cid string, rows []*jsx.OrderedMap) ([]any, error) {
 	}
 	items := make([]any, 0, len(rows))
 	for _, r := range rows {
-		ex := strings.TrimSpace(reSpaces.ReplaceAllString(reTags.ReplaceAllString(jsx.StrOrEmpty(r.V("body")), " "), " "))
+		title, body := postLang(jsx.StrOrEmpty(r.V("title")), jsx.StrOrEmpty(r.V("body")), jsx.StrOrEmpty(r.V("i18n")))
+		ex := strings.TrimSpace(reSpaces.ReplaceAllString(reTags.ReplaceAllString(body, " "), " "))
 		var writer any
 		if jsx.Truthy(r.V("userId")) {
 			p := people[jsx.Str(r.V("userId"))]
@@ -198,7 +225,7 @@ func postCards(c *web.Ctx, cid string, rows []*jsx.OrderedMap) ([]any, error) {
 			image = jsx.ParseOr(s, nil)
 		}
 		items = append(items, jsx.Obj(
-			"postId", r.V("postId"), "groupKey", r.V("groupKey"), "groupSubKey", r.V("groupSubKey"), "title", r.V("title"),
+			"postId", r.V("postId"), "groupKey", r.V("groupKey"), "groupSubKey", r.V("groupSubKey"), "title", title,
 			"excerpt", v1x.Cut(ex, 100), "image", image, "isFixTop", jsx.StrOrEmpty(r.V("isFixTop")) == "true",
 			"writer", writer, "viewCount", jsx.Number(r.V("viewCount")), "commentCount", jsx.Number(r.V("commentCount")),
 			"likeCount", jsx.Number(r.V("likeCount")),

@@ -101,10 +101,12 @@ export function getGroupPosts(groupKey: string, force = false): Promise<Post[]> 
  * 게시판 한 쪽 — 서버가 나누고 찾는다(Go `/api/v1/boards/{게시판}/posts`, CLAUDE.md 4). 위 고정 글이 먼저(서버 기본 정렬).
  * 목록 줄 모양(Post)으로 바꿔 돌려준다 — 본문은 앞 100자(excerpt)만 온다.
  */
-export async function getBoardPage(s: { groupKey: string; pageNo: number; pageSize: number; keyword?: string; groupSubKey?: string }): Promise<{ posts: Post[]; total: number }> {
+export async function getBoardPage(s: { groupKey: string; pageNo: number; pageSize: number; keyword?: string; groupSubKey?: string; lang?: string }): Promise<{ posts: Post[]; total: number }> {
 	const q = new URLSearchParams({ page: String(s.pageNo || 1), size: String(Math.min(100, s.pageSize || 10)) });
 	if (s.keyword?.trim()) q.set('q', s.keyword.trim());
 	if (s.groupSubKey) q.set('groupSubKey', s.groupSubKey);
+	// 다국어 사이트면 그 언어 제목·요약(홈페이지 다국어 플러그인이 넘긴다 — 번역이 없으면 기본 글)
+	if (s.lang && s.lang != 'ko') q.set('lang', s.lang);
 	const o = await api.get<any[]>(`/api/v1/boards/${encodeURIComponent(s.groupKey.toUpperCase())}/posts?${q}`);
 	if (!o.ok) return { posts: [], total: 0 };
 	const total = Number(o.meta?.total) || 0;
