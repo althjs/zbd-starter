@@ -116,7 +116,9 @@ export const SK = {
 	claude: {
 		fontSize: 'zbd:claude:fontSize',
 		/** sessionStorage — 지금 보는 대화 */
-		current: (owner: string | number, win = false) => `zbd:claude:current:${owner}${win ? '-win' : ''}`
+		current: (owner: string | number, win = false) => `zbd:claude:current:${owner}${win ? '-win' : ''}`,
+		/** 대화마다 마지막으로 쓴 중계 번호 {sessionId: owner} — 같은 폴더 중계끼리 대화 목록을 나눠 써서 목록만으로는 어느 중계인지 모른다 */
+		sessionOwner: 'zbd:claude:sessionOwner'
 	},
 	messenger: {
 		claudeSeen: 'zbd:messenger:claudeSeen',
