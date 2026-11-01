@@ -2,7 +2,7 @@
  * 웹하드(파일 탐색기) API — React explorer/zustandMarkdownStore. `/service/admin/file-explorer/{루트}`.
  * 저장은 불러온 내용의 지문(baseHash) 과 같이 — 그사이 다른 곳에서 바뀌었으면 서버가 code 4090 + 지금 내용으로 거절한다.
  */
-import { api } from '#lib/shared/api.ts';
+import { api, COOKIE_SESSION } from '#lib/shared/api.ts';
 import type { FILE_NODE, WEBHARD_ACL_INFO, WEBHARD_ACL_RULE } from '#lib/shared/types/file.ts';
 
 const base = (root: string) => `/service/admin/file-explorer/${encodeURIComponent(root)}`;
@@ -47,6 +47,40 @@ export function uploadFiles(root: string, folderPath: string, files: File[]) {
 	const fd = new FormData();
 	files.forEach((f) => fd.append('files[]', f));
 	return api.post(`${base(root)}/upload?folderPath=${encodeURIComponent(folderPath || '')}`, fd);
+}
+/** 폴더 안 파일 수·합계 크기(목록 트리로 — 내려받기 확인 문구) */
+export function folderStat(n: FILE_NODE | null | undefined): { files: number; size: number } {
+	let files = 0,
+		size = 0;
+	for (const x of n?.items || []) {
+		if (x.type === 'directory') {
+			const s = folderStat(x);
+			files += s.files;
+			size += s.size;
+		} else {
+			files++;
+			size += Number(x.size) || 0;
+		}
+	}
+	return { files, size };
+}
+/** 폴더 내려받기 — 서버가 zip 으로 묶어 흘려보낸다. 운영(쿠키 로그인)은 주소로 바로 받아 큰 폴더도 메모리에 담지 않고, 개발(헤더 토큰)은 Blob 으로 */
+export async function downloadFolder(root: string, folderPath: string, name: string) {
+	const url = `${base(root)}/zip?folderPath=${encodeURIComponent(folderPath || '')}`;
+	let href = url;
+	if (!COOKIE_SESSION) {
+		const o = await api.blob(url);
+		if (!o.ok) return false;
+		href = URL.createObjectURL(o.data);
+	}
+	const a = document.createElement('a');
+	a.href = href;
+	a.download = `${name}.zip`;
+	document.body.appendChild(a);
+	a.click();
+	a.remove();
+	if (href !== url) setTimeout(() => URL.revokeObjectURL(href), 60_000);
+	return true;
 }
 /** 폴더·파일 권한 — 스타터 기본은 권한이 없어 늘 읽기·쓰기(「업무 웹하드」 플러그인이 이 파일을 서버에 묻는 판으로 바꾼다) */
 export async function getAcl(_root: string, _path = ''): Promise<WEBHARD_ACL_INFO> {

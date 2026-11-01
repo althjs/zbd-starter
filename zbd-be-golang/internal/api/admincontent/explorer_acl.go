@@ -13,3 +13,8 @@ import (
 func explorerCoeditRoom(c *web.Ctx, hostingID string, rootFolder any, root, p string) (string, bool) {
 	return jsx.Str(rootFolder), true
 }
+
+// explorerReadFilter — 폴더 내려받기(explorer_zip.go). 권한 없음 — 늘 읽기
+func explorerReadFilter(c *web.Ctx, hostingID string, rootFolder any, root, dir string) (func(abs string) bool, bool) {
+	return func(string) bool { return true }, true
+}

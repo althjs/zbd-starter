@@ -21,7 +21,7 @@
 	import '../ui/collab.css';
 	import { MENUITEM, SEC, TYPO } from '../ui/cls.ts';
 	import { withLastViewMode } from './constants.ts';
-	import { getFile, getFileTree, isImageFile, isTextFile, mkdir, mkfile, mv, rm, uploadFiles } from './files.ts';
+	import { downloadFolder, folderStat, getFile, getFileTree, isImageFile, isTextFile, mkdir, mkfile, mv, rm, uploadFiles } from './files.ts';
 	import type { FILE_NODE } from '#lib/shared/types/file.ts';
 	import { SK } from '#lib/shared/storage-keys.ts';
 	import { fileActions, fileExt, newItems } from './ext.ts';
@@ -403,6 +403,25 @@
 		e.stopPropagation();
 		if (dragTarget !== id) dragTarget = id;
 	};
+	// 폴더 내려받기 — zip 으로 묶인다는 것을 먼저 알리고 받는다
+	function findNode(n: FILE_NODE | null | undefined, p: string): FILE_NODE | null {
+		if (!n) return null;
+		if (!p || n.path === p) return n;
+		for (const x of n.items || []) if (x.type === 'directory' && (x.path === p || p.startsWith(x.path + '/'))) return findNode(x, p);
+		return null;
+	}
+	async function onDownloadFolder() {
+		const n = ctx?.type === 'blank' ? null : ctx?.node;
+		const path = ctx?.type === 'blank' ? ctx.parentPath || '' : n?.path || '';
+		const name = path ? path.split('/').pop()! : rootFolder;
+		const st = folderStat(n || findNode(root, path));
+		close();
+		const mb = st.size / 1024 / 1024;
+		const size = mb >= 1024 ? `${(mb / 1024).toFixed(1)}GB` : mb >= 1 ? `${mb.toFixed(1)}MB` : `${Math.max(1, Math.round(st.size / 1024))}KB`;
+		if (!(await confirm(`'${name}' 폴더를 zip 파일(${name}.zip)로 묶어 내려받습니다.\n파일 ${st.files.toLocaleString()}개 · 약 ${size}\n\n브라우저의 다운로드 폴더에 저장됩니다. 계속할까요?`))) return;
+		toast('zip 파일을 만들어 내려받는 중입니다…');
+		if (!(await downloadFolder(rootFolder, path, name))) alert('내려받기에 실패했습니다.');
+	}
 	async function download() {
 		if (!selectedFile) return;
 		const c = await getFile(rootFolder, selectedFile.path);
@@ -460,6 +479,8 @@
 	const body2 = 'MuiTypography-root MuiTypography-body2';
 	type CtxItem = { icon: string; label: string; fn: () => void; disabled?: boolean };
 	const extItems: CtxItem[] = newItems.map((k) => ({ icon: k.icon, label: k.label, fn: () => onNewSpecial(k.create) }));
+	// 폴더 내려받기(zip) — 여러 개 고른 때는 없음
+	const zipItem = (n: number): CtxItem[] => (n > 1 ? [] : [{ icon: 'download', label: '폴더 내려받기 (zip)', fn: onDownloadFolder }]);
 	const ctxItems = $derived.by((): CtxItem[] => {
 		const c = ctx;
 		if (!c) return [];
@@ -474,6 +495,7 @@
 				...extItems,
 				{ icon: 'upload_file', label: '파일 올리기', fn: () => pick(false) },
 				{ icon: 'drive_folder_upload', label: '폴더 올리기', fn: () => pick(true) },
+				...zipItem(n),
 				{ icon: 'drive_file_rename_outline', label: '이름 변경', fn: onRename },
 				cut,
 				...move
@@ -493,6 +515,7 @@
 			...extItems,
 			{ icon: 'upload_file', label: '파일 올리기', fn: () => pick(false) },
 			{ icon: 'drive_folder_upload', label: '폴더 올리기', fn: () => pick(true) },
+			...zipItem(1),
 			...move
 		];
 	});

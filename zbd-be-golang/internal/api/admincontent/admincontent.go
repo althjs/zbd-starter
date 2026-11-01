@@ -33,5 +33,6 @@ func Register(r *web.Router) {
 	r.Handle("/admin/file-explorer/[rootFolder]", web.Auth, adminFileExplorer)
 	r.Handle("/admin/file-explorer/[rootFolder]/move", web.Auth, adminFileExplorerMove)
 	r.Handle("/admin/file-explorer/[rootFolder]/presence", web.Auth, adminFileExplorerPresence)
+	r.Handle("/admin/file-explorer/[rootFolder]/zip", web.Auth, adminFileExplorerZip) // 폴더 내려받기(explorer_zip.go)
 	r.Handle("/admin/file-explorer/[rootFolder]/upload", web.Auth, adminFileExplorerUpload, web.Options{RawBody: true})
 }
