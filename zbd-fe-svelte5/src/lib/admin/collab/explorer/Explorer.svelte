@@ -422,17 +422,35 @@
 		toast('zip 파일을 만들어 내려받는 중입니다…');
 		if (!(await downloadFolder(rootFolder, path, name))) alert('내려받기에 실패했습니다.');
 	}
-	async function download() {
-		if (!selectedFile) return;
-		const c = await getFile(rootFolder, selectedFile.path);
+	async function download(node: FILE_NODE | null = selectedFile) {
+		if (!node) return;
+		const c = await getFile(rootFolder, node.path);
 		const url = URL.createObjectURL(c instanceof Blob ? c : new Blob([c]));
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = selectedFile.name;
+		a.download = node.name;
 		document.body.appendChild(a);
 		a.click();
 		a.remove();
 		URL.revokeObjectURL(url);
+	}
+	function nodeAt(p: string): FILE_NODE | null {
+		let items = root?.items || [];
+		let q = '';
+		let node: FILE_NODE | null = null;
+		for (const part of p.split('/')) {
+			q = q ? `${q}/${part}` : part;
+			node = items.find((x) => x.path === q) || null;
+			if (!node) return null;
+			items = node.items || [];
+		}
+		return node;
+	}
+	async function downloadMany(paths: string[]) {
+		for (const p of paths) {
+			const n = nodeAt(p);
+			if (n && n.type !== 'directory') await download(n);
+		}
 	}
 	// 미리보기 마크다운 — 제목에 id(목차 링크), 상대 링크는 탐색기 안에서 이동
 	function mdLinks(node: HTMLElement) {
@@ -503,6 +521,8 @@
 		if (c.type === 'file')
 			return [
 				{ icon: 'delete', label: n > 1 ? `삭제 (${n}개)` : '삭제', fn: onDelete },
+				// 파일 내려받기 — 여러 개 고르면 하나씩
+				{ icon: 'download', label: n > 1 ? `다운로드 (${n}개)` : '다운로드', fn: () => (close(), downloadMany(targetsOf(c.node))) },
 				{ icon: 'drive_file_rename_outline', label: '이름 변경', fn: onRename, disabled: n > 1 },
 				...(fileExt(c.node?.name || '') ? [{ icon: 'open_in_new', label: fileExt(c.node?.name || '')!.openLabel, fn: () => (close(), openSpecial(c.node!)) }] : []),
 				...fileActions(c.node?.name || '').map((a) => ({ icon: a.icon, label: a.label, fn: () => (close(), a.run(rootFolder, c.node!)) })),
@@ -680,7 +700,7 @@
 									<Icon name={fileIcon(selectedFile.name)} sx={{ fontSize: 64, color: SEC, marginBottom: 16 }} />
 									<p class={cx(TYPO, toClass({ marginBottom: 24 }))}>미리보기를 지원하지 않는 파일 형식입니다.</p>
 									<div class={cx('MuiBox-root', toClass({ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }))}>
-										<Button variant="contained" onclick={download}>다운로드</Button>
+										<Button variant="contained" onclick={() => download()}>다운로드</Button>
 										{#each fileActions(selectedFile.name) as a}
 											{@const f = selectedFile}
 											<Button variant="outlined" onclick={() => a.run(rootFolder, f)}><Icon name={a.icon} sx={{ fontSize: 18, marginRight: 6 }} />{a.label}</Button>
