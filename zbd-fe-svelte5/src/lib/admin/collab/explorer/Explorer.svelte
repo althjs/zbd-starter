@@ -209,7 +209,30 @@
 		if (sel.length) selectedPaths = sel;
 		if (node) showPreview(node.type === 'file' ? node : null);
 	}
-	loadTree().then(() => {
+	// 링크로 들어옴(?select=경로) — 그 파일·폴더를 고른 상태로
+	async function copyLink(node: FILE_NODE | undefined) {
+		close();
+		if (!node) return;
+		const url = `${location.origin}/admin/explorer/${rootFolder}?select=${encodeURIComponent(node.path)}`;
+		try {
+			await navigator.clipboard.writeText(url);
+		} catch {
+			const t = document.createElement('textarea');
+			t.value = url;
+			document.body.appendChild(t);
+			t.select();
+			document.execCommand('copy');
+			t.remove();
+		}
+		toast({ msg: `「${node.name}」 링크를 복사했습니다. 업무 채팅에 붙여 넣어 작업을 지시하세요.`, type: 'success' });
+	}
+	loadTree().then(async () => {
+		const link = page.url.searchParams.get('select');
+		if (link) {
+			await selectByPath('/' + link.replace(/^\/+/, ''));
+			if (selectedPaths.length) return;
+			toast({ msg: '링크의 파일·폴더를 찾지 못했습니다.', type: 'warning' });
+		}
 		try {
 			const saved = localStorage.getItem(storageKey);
 			if (saved) selectByPath('/' + saved);
@@ -517,6 +540,8 @@
 				{ icon: 'upload_file', label: '파일 올리기', fn: () => pick(false) },
 				{ icon: 'drive_folder_upload', label: '폴더 올리기', fn: () => pick(true) },
 				...zipItem(n),
+				{ icon: 'link', label: '링크 복사', fn: () => copyLink(c.node) },
+				{ icon: 'link', label: '링크 복사', fn: () => copyLink(c.node), disabled: n > 1 },
 				{ icon: 'drive_file_rename_outline', label: '이름 변경', fn: onRename },
 				cut,
 				...move
