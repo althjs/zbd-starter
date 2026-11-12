@@ -87,8 +87,8 @@
 		<MemberListTable {memberList} {doCopyDevLogin} onManage={(m) => (drawer = m)} />
 		<TablePagination sx={{ marginTop: 16 }} {search} getData={(s) => getData(s)} pageCount={Math.ceil(totalCount / search.pageSize)} />
 	</Card>
-	{#if ApiTokens}<ApiTokens admins={(adminMembers.list || []).filter((m) => !m.hostingId || m.hostingId == hostingId)} />{/if}
 {/if}
+{#if ApiTokens}<ApiTokens admins={(adminMembers.list || []).filter((m) => !m.hostingId || m.hostingId == hostingId)} />{/if}
 
 <div class={cx('MuiBox-root', toClass({ marginTop: 16 }))}>
 	<AuthButton variant="contained" onclick={() => (drawer = { adminId: 0 })}>관리자 추가</AuthButton>
