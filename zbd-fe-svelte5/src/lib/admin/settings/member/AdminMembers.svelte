@@ -18,6 +18,9 @@
 	import MemberListTable from './MemberListTable.svelte';
 	import MemberManageDrawer from './MemberManageDrawer.svelte';
 	import MemberSearchForm from './MemberSearchForm.svelte';
+	// 관리자 API 영구 토큰 — Claude 통합이 있을 때만(파일이 없으면 빈 목록)
+	const apiTokenMods = import.meta.glob<{ default: any }>('../../collab/claude/ApiTokens.svelte', { eager: true });
+	const ApiTokens = Object.values(apiTokenMods)[0]?.default;
 	import { adminMembers, getAdminSiteMeta, loadAdminMembers, setAdminMembers } from './adminMembers.svelte.ts';
 
 	const profile = admin.profile!;
@@ -84,6 +87,7 @@
 		<MemberListTable {memberList} {doCopyDevLogin} onManage={(m) => (drawer = m)} />
 		<TablePagination sx={{ marginTop: 16 }} {search} getData={(s) => getData(s)} pageCount={Math.ceil(totalCount / search.pageSize)} />
 	</Card>
+	{#if ApiTokens}<ApiTokens admins={(adminMembers.list || []).filter((m) => !m.hostingId || m.hostingId == hostingId)} />{/if}
 {/if}
 
 <div class={cx('MuiBox-root', toClass({ marginTop: 16 }))}>

@@ -256,7 +256,7 @@ func adminCommonMenus(c *web.Ctx) {
 
 	now := time.Now().UnixMilli()
 	if t.BrowserUID == auth.AnyBrowser {
-		if t.TS+24*60*60*1000 < now {
+		if web.ApiTokenID(t) == 0 && t.TS+24*60*60*1000 < now {
 			c.Ecb("timeout")
 			return
 		}

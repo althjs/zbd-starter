@@ -150,6 +150,9 @@ func serve(a *app.App, rt *route, prefix string, params map[string]any, w http.R
 	}
 	c.Token = auth.Parse(req, a.Cfg.AESKey, a.Cfg.AESIV, "")
 	c.loadSession()
+	if ApiTokenID(c.Token) != 0 && !ApiTokenActive(req.Context(), a, c.Token) {
+		c.Token = &auth.Token{} // 폐기·만료된 API 영구 토큰 — 손님으로
+	}
 
 	defer func() {
 		if rec := recover(); rec != nil {
