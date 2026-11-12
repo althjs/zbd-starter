@@ -21,7 +21,8 @@
 	import '../ui/collab.css';
 	import { MENUITEM, SEC, TYPO } from '../ui/cls.ts';
 	import { withLastViewMode } from './constants.ts';
-	import { downloadFolder, folderStat, getFile, getFileTree, isImageFile, isTextFile, mkdir, mkfile, mv, rm, uploadFiles } from './files.ts';
+	import { downloadFolder, folderStat, getBlob, getFile, getFileTree, isImageFile, isOfficeViewFile, isPdfFile, isTextFile, mkdir, mkfile, mv, rm, uploadFiles } from './files.ts';
+	import OfficeFileView from './OfficeFileView.svelte';
 	import type { FILE_NODE } from '#lib/shared/types/file.ts';
 	import { SK } from '#lib/shared/storage-keys.ts';
 	import { fileActions, fileExt, newItems } from './ext.ts';
@@ -105,13 +106,15 @@
 		}
 		return cols;
 	});
+	// 웹오피스는 플러그인 — 있을 때만 엑셀·파워포인트·워드·CSV 를 읽어 미리보기(스타터엔 없음)
+	const hasOfficeViewer = Object.keys(import.meta.glob('../office/core/print.ts')).length > 0;
 	async function showPreview(node: FILE_NODE | null) {
 		selectedFile = node;
 		preview = '';
-		if (!node || !(isImageFile(node.name) || isTextFile(node.name))) return;
+		if (!node || !(isImageFile(node.name) || isTextFile(node.name) || isPdfFile(node.name) || (hasOfficeViewer && isOfficeViewFile(node.name)))) return;
 		loading = true;
 		try {
-			preview = await getFile(rootFolder, node.path);
+			preview = (hasOfficeViewer && isOfficeViewFile(node.name)) || isPdfFile(node.name) ? await getBlob(rootFolder, node.path) : await getFile(rootFolder, node.path);
 		} catch {
 			preview = '파일을 불러오는 중 오류가 발생했습니다.';
 		} finally {
@@ -663,6 +666,18 @@
 										</div>
 									{/each}
 								</div>
+							{:else if isPdfFile(selectedFile.name)}
+								{#if previewUrl}<iframe class="zx-pdf" title={selectedFile.name} src={previewUrl}></iframe>{/if}
+							{:else if hasOfficeViewer && isOfficeViewFile(selectedFile.name) && preview instanceof Blob}
+								{@const f = selectedFile}
+								{#if fileActions(f.name).length}
+									<div class={cx('MuiBox-root', toClass({ display: 'flex', gap: 8, padding: '12px 16px 8px' }))}>
+										{#each fileActions(f.name) as a}
+											<Button variant="outlined" size="small" onclick={() => a.run(rootFolder, f)}><Icon name={a.icon} sx={{ fontSize: 18, marginRight: 6 }} />{a.label}</Button>
+										{/each}
+									</div>
+								{/if}
+								<OfficeFileView blob={preview} name={f.name} />
 							{:else if isTextFile(selectedFile.name)}
 								{#if selectedFile.name.endsWith('.md')}
 									<div class={cx('MuiBox-root', toClass({ paddingLeft: 24, paddingRight: 24 }))} use:mdLinks><MarkdownView text={typeof preview === 'string' ? preview : ''} /></div>

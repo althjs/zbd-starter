@@ -20,6 +20,14 @@ export async function getTextFile(root: string, filePath: string) {
 }
 export const isImageFile = (n: string) => /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(n || '');
 export const isTextFile = (n: string) => /\.(md|txt|json|js|jsx|ts|tsx|css|html|xml|yml|yaml|csv)$/i.test(n || '');
+export const isPdfFile = (n: string) => /\.pdf$/i.test(n || '');
+/** 웹오피스가 있을 때 웹하드 미리보기로 읽어 보여 주는 문서(엑셀·CSV·파워포인트·워드) */
+export const isOfficeViewFile = (n: string) => /\.(csv|tsv|xlsx|xlsm|xls|ods|pptx|odp|docx|odt)$/i.test(n || '');
+/** 글자 해석 없이 바이트 그대로(CSV 는 EUC-KR 일 수 있어 웹오피스 읽기가 직접 푼다) */
+export async function getBlob(root: string, filePath: string): Promise<Blob | ''> {
+	const o = await api.blob(base(root) + q(filePath));
+	return o.ok ? o.data : '';
+}
 /** 글 파일이면 글, 그림·그 밖은 Blob */
 export async function getFile(root: string, filePath: string): Promise<any> {
 	if (isTextFile(filePath)) {
