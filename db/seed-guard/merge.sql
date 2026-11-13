@@ -83,4 +83,5 @@ INSERT INTO admin_menu_apis (menuId, api, description, hostingId)
 SELECT COALESCE(p.menuId, x.menuId), x.api, x.description, x.hostingId FROM seed_in_apis x
 LEFT JOIN seed_map p ON p.hostingId = x.hostingId AND p.seedId = x.menuId
 WHERE NOT EXISTS (SELECT 1 FROM admin_menu_apis z WHERE z.menuId = COALESCE(p.menuId, x.menuId) AND z.api = x.api);
-DROP TEMPORARY TABLE IF EXISTS seed_in_menus, seed_in_roles, seed_in_apis, seed_map, seed_map_b, seed_todo;
+DROP TABLE IF EXISTS seed_in_menus, seed_in_roles, seed_in_apis;
+DROP TEMPORARY TABLE IF EXISTS seed_map, seed_map_b, seed_todo;
