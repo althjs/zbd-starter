@@ -6,6 +6,13 @@
 	let { label, tip = null }: { label: string; tip?: { title?: string; lines: string[] } | null } = $props();
 	let open = $state(false);
 	let wrap = $state<HTMLElement>();
+	// 카드의 overflow:hidden 에 잘리지 않게 화면 기준(fixed) 좌표로 띄운다
+	let pos = $state({ top: 0, left: 0 });
+	function place() {
+		if (!wrap) return;
+		const r = wrap.getBoundingClientRect();
+		pos = { top: r.bottom + 8, left: Math.max(8, Math.min(r.left - 12, window.innerWidth - 292)) };
+	}
 	$effect(() => {
 		if (!open) return;
 		const off = (e: PointerEvent) => wrap && !wrap.contains(e.target as Node) && (open = false);
@@ -23,16 +30,16 @@
 			role="button"
 			tabindex="0"
 			aria-label="{label} 설명"
-			onpointerenter={(e) => e.pointerType != 'touch' && (open = true)}
+			onpointerenter={(e) => e.pointerType != 'touch' && (place(), (open = true))}
 			onpointerleave={(e) => e.pointerType != 'touch' && (open = false)}
-			onclick={() => (open = !open)}
-			onkeydown={(e) => (e.key == 'Enter' || e.key == ' ') && (open = !open)}
+			onclick={() => (place(), (open = !open))}
+			onkeydown={(e) => (e.key == 'Enter' || e.key == ' ') && (place(), (open = !open))}
 		>
 			<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"
 				><path fill="currentColor" d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8"></path></svg
 			>
 			{#if open}
-				<span class="tip" role="tooltip">
+				<span class="tip" role="tooltip" style="top:{pos.top}px;left:{pos.left}px">
 					<b>{tip.title || label}</b>
 					{#each tip.lines as l, i (i)}<span class="tl">{l}</span>{/each}
 				</span>
@@ -62,10 +69,8 @@
 		color: var(--theme-color-main, #3b82f6);
 	}
 	.tip {
-		position: absolute;
-		top: calc(100% + 8px);
-		left: -12px;
-		z-index: 20;
+		position: fixed;
+		z-index: 1000;
 		width: max-content;
 		max-width: min(280px, 72vw);
 		display: flex;
@@ -88,6 +93,7 @@
 		position: absolute;
 		top: -5px;
 		left: 15px;
+		pointer-events: none;
 		width: 10px;
 		height: 10px;
 		background: #1f2937;
