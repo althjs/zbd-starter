@@ -40,12 +40,21 @@ SET @seed_next := GREATEST(999,
 	(SELECT COALESCE(MAX(menuId), 0) FROM admin_menus),
 	(SELECT COALESCE(MAX(menuId), 0) FROM seed_in_menus),
 	(SELECT COALESCE(MAX(menuId), 0) FROM seed_menu_ids));
+-- (MySQL 은 임시 표를 한 문장에서 두 번 못 읽는다 — 아직 번호 없는 것을 먼저 다른 임시 표에 모은다)
+CREATE TEMPORARY TABLE seed_todo (
+	hostingId VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
+	seedId INT NOT NULL,
+	PRIMARY KEY (hostingId, seedId)
+);
+INSERT INTO seed_todo (hostingId, seedId)
+SELECT s.hostingId, s.menuId FROM seed_in_menus s
+LEFT JOIN seed_map p ON p.hostingId = s.hostingId AND p.seedId = s.menuId
+WHERE p.seedId IS NULL;
 INSERT IGNORE INTO seed_map (hostingId, seedId, menuId)
 SELECT q.hostingId, q.seedId, (@seed_next := @seed_next + 1) FROM (
-	SELECT s.hostingId, s.menuId AS seedId FROM seed_in_menus s
-	WHERE NOT EXISTS (SELECT 1 FROM seed_map p WHERE p.hostingId = s.hostingId AND p.seedId = s.menuId)
-	ORDER BY s.menuId LIMIT 100000
+	SELECT hostingId, seedId FROM seed_todo ORDER BY seedId LIMIT 100000
 ) q;
+DROP TEMPORARY TABLE seed_todo;
 REPLACE INTO seed_menu_ids (file, hostingId, seedId, menuId)
 SELECT @seed_file, hostingId, seedId, menuId FROM seed_map WHERE seedId <> menuId;
 SELECT CONCAT('· 메뉴 번호가 겹쳐 옮겨 넣음 (', @seed_file, '): ', GROUP_CONCAT(CONCAT(seedId, '→', menuId) ORDER BY seedId SEPARATOR ', ')) AS seed_guard
@@ -58,9 +67,11 @@ SET @seed_vals := (SELECT GROUP_CONCAT(CASE column_name
 		WHEN 'parentId' THEN 'COALESCE(b.menuId, (SELECT k.menuId FROM seed_menu_ids k WHERE k.hostingId = s.hostingId AND k.seedId = s.parentId ORDER BY k.createdAt LIMIT 1), s.parentId)'
 		ELSE CONCAT('s.`', column_name, '`') END ORDER BY ordinal_position)
 	FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'admin_menus');
+CREATE TEMPORARY TABLE seed_map_b LIKE seed_map;
+INSERT INTO seed_map_b SELECT * FROM seed_map;
 SET @seed_q := CONCAT('INSERT IGNORE INTO admin_menus (', @seed_cols, ') SELECT ', @seed_vals,
 	' FROM seed_in_menus s LEFT JOIN seed_map a ON a.hostingId = s.hostingId AND a.seedId = s.menuId',
-	' LEFT JOIN seed_map b ON b.hostingId = s.hostingId AND b.seedId = s.parentId');
+	' LEFT JOIN seed_map_b b ON b.hostingId = s.hostingId AND b.seedId = s.parentId');
 PREPARE seed_stmt FROM @seed_q;
 EXECUTE seed_stmt;
 DEALLOCATE PREPARE seed_stmt;
@@ -72,4 +83,4 @@ INSERT INTO admin_menu_apis (menuId, api, description, hostingId)
 SELECT COALESCE(p.menuId, x.menuId), x.api, x.description, x.hostingId FROM seed_in_apis x
 LEFT JOIN seed_map p ON p.hostingId = x.hostingId AND p.seedId = x.menuId
 WHERE NOT EXISTS (SELECT 1 FROM admin_menu_apis z WHERE z.menuId = COALESCE(p.menuId, x.menuId) AND z.api = x.api);
-DROP TEMPORARY TABLE IF EXISTS seed_in_menus, seed_in_roles, seed_in_apis, seed_map;
+DROP TEMPORARY TABLE IF EXISTS seed_in_menus, seed_in_roles, seed_in_apis, seed_map, seed_map_b, seed_todo;
