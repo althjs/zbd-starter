@@ -35,6 +35,9 @@
 	// 고객 상담 설정(알림 담당자·AI 응대·문의 그룹) — 「고객 상담 채팅」 플러그인 부품. 없으면 칸이 안 생긴다
 	const supportSetMods = import.meta.glob<{ default: Component<any> }>('../../collab/support/SupportSettings.svelte', { eager: true });
 	const SupportSettingsC = Object.values(supportSetMods)[0]?.default;
+	// 업데이트 알림 스위치 — Claude 통합 플러그인 부품(없으면 칸이 안 생긴다)
+	const updNoticeMods = import.meta.glob<{ default: Component<any> }>('../../collab/claude/UpdateNoticeSetting.svelte', { eager: true });
+	const UpdateNoticeC = Object.values(updNoticeMods)[0]?.default;
 	const hasSupport = Object.keys(supportSetMods).length > 0;
 	let { meta, hostingId, onChange }: { meta: any; hostingId: string; onChange: (m: any) => void } = $props();
 	const siteDefault = { title: '', logo: null, favicon: null };
@@ -260,6 +263,7 @@
 			{@render row('관리자 로그인 유지 기간', adminSession)}
 			{@render row('사무실 IP', officeIps)}
 			{#if SupportSettingsC}<SupportSettingsC {json} {set} {hostingId} />{/if}
+			{#if UpdateNoticeC}<UpdateNoticeC {json} {set} {hostingId} />{/if}
 		</SettingGroup>
 		{#if showImages}
 			<SettingGroup title="관리자 로고 · 파비콘" desc="관리자 화면 왼쪽 위 로고와 탭 아이콘" wrap>
